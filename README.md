@@ -2,7 +2,6 @@
 ![Build Status](https://github.com/morel-source/ScalableTcpDeviceGateway/actions/workflows/dotnet.yml/badge.svg)
 
 **Status:** Actively under development.  
-*Note: This repository is being built in public to demonstrate iterative improvements and high-concurrency architecture.*
 
 ---
 
