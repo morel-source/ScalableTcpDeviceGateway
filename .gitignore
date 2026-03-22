@@ -1,0 +1,13 @@
+bin/
+obj/
+/packages/
+.idea/
+*.iml
+.vs/
+*.user
+*.suo
+_ReSharper.Caches/
+.DS_Store
+Thumbs.db
+*.log
+docker-compose.override.yml
