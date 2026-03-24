@@ -1,136 +1,106 @@
-
 # Scalable TCP Device Gateway
 
 ![Build Status](https://github.com/morel-source/ScalableTcpDeviceGateway/actions/workflows/dotnet.yml/badge.svg)
 
 **Status:** Actively under development.
 
-> Designed to simulate real-world IoT gateway workloads under high concurrency.
-
-High-performance, zero-allocation TCP server designed to handle thousands of concurrent device connections with minimal overhead.
-
-> 🚀 High-concurrency TCP gateway built with .NET and System.IO.Pipelines  
-> 📊 Full observability with Prometheus, Grafana, and Loki  
-> ⚡ Designed for zero allocations and maximum throughput
-
+---
 
 ### 🚀 Overview
 
-This is a **high-concurrency TCP server** designed to handle thousands of simultaneous device connections with minimal
-overhead. It serves as a robust gateway for IoT or industrial device communication.
-
-- **Tracks:** Login, Heartbeat, and Disconnect messages.
-- **Metrics:** Exposes Prometheus metrics for real-time monitoring.
-- **Visualization:** Integrated with Grafana dashboards.
-- **Logging:** Centralized logging using **Grafana Loki**.
-- **Performance:** Built with **.NET 10 (LTS)** and `System.IO.Pipelines`.
+A high-performance IoT gateway capable of 10k+ concurrent connections, achieving near-zero allocation on the hot path
+via .NET 10 and `System.IO.Pipelines`
 
 ---
 
 ### ❓ Why this project?
 
-Efficiently handling thousands of TCP connections is a common challenge in IoT and industrial systems.
+In IoT and industrial automation, handling thousands of concurrent "chatty" devices is a common bottleneck. Traditional `async/await` patterns over standard streams can lead to high GC pressure and memory fragmentation under extreme load.
 
 This project demonstrates:
-
-- Building high-throughput, low-allocation TCP gateways in .NET
-- Maintaining full observability with metrics, logs, and dashboards
-- Applying advanced concurrency and performance patterns
-
----
-
-### 🛠 Tech Stack
-
-- **Framework:** .NET (latest)
-- **Networking:** `System.IO.Pipelines` (High-performance I/O)
-- **Monitoring:** Prometheus & Grafana
-- **Logging:** Grafana Loki
-- **CI/CD:** GitHub Actions
-- **Infrastructure:** Docker Compose (Monitoring Stack)
+- **High-Performance Networking:** Engineering a zero-copy TCP provider using `System.IO.Pipelines` to eliminate GC overhead.
+- **Cloud-Native Observability:** Implementing a "Golden Signals" monitoring stack with Prometheus, Grafana, and Loki.
+- **Advanced Concurrency:** Managing thousands of stateful device sessions using thread-safe, low-overhead patterns.
 
 ---
 
 ### ✨ Key Features
 
-- Handles **thousands of concurrent TCP connections**
-- **Zero-allocation message parsing & encoding**
-- Built-in **Prometheus metrics**
-- Full **observability stack (Grafana + Loki)**
-- **Device simulator** for load testing
-- Dockerized monitoring environment
+- **High-Concurrency Engine:** Built with `System.IO.Pipelines` for non-blocking, zero-copy
+  I/O.
+- **Zero-Allocation Parsing:** Uses `ReadOnlySequence<byte>` to process streams without heap allocations.
+- **Memory Efficiency:** Commands modeled as `readonly record structs` and `Span<T>` to keep data on the stack.
+- **Full Observability:** Integrated Prometheus metrics, Grafana dashboards, and Loki logs for real-time monitoring.
+- **Built-in Load Testing:** Custom `Device.Simulator` to stress-test backpressure and throughput.
 
 ---
 
-### 📂 Project Structure
+### 🛠 Tech Stack
 
-```text
-├── Gateway.Server/          # Core TCP engine (Pipelines & socket handling)
-├── Gateway.Protocol/        # Protocol parsing & encoding
-├── Gateway.Protocol.Tests/  # Unit tests & benchmarks
-├── Benchmarks/              # BenchmarkDotNet suites
-├── Gateway.Monitoring/      # Metrics & observability logic
-├── Device.Simulator/        # Load testing tool
-├── Dashboards/              # Grafana dashboards & images
-├── prometheus/              # Prometheus configuration
-└── docker-compose.yaml      # Monitoring stack setup
-```
+- **Framework:** .NET 10 (LTS)
+- **Networking:** `System.IO.Pipelines` (High-performance, low-latency socket I/O)
+- **Memory Management:** `ArrayPool<T>` and `Span<T>` for buffer management.
+- **Observability:** Prometheus (Metrics), Grafana (Visualization), and Grafana Loki (Logging).
+- **CI/CD:** GitHub Actions (Automated build & test).
+- **Infrastructure:** Docker Compose (Monitoring stack).
 
 ---
 
 ### ⚡ Performance & Design Highlights
 
-- Zero-Allocation Parsing: Uses `System.IO.Pipelines` and `ReadOnlySequence<byte>` to process streams without intermediate allocations
-- Memory-Efficient Encoding: Encoders write directly into `PipeWriter`, 0 bytes allocated per message
-- Low-Overhead Payloads: `readonly record structs` for stack-based data and value equality
-- Asynchronous Backpressure: Uses `ValueTask` and `FlushAsync` to handle slow consumers without blocking threads
-
+| Feature                 | Technical Implementation  | Impact                                           |
+|:------------------------|:--------------------------|:-------------------------------------------------|
+| Zero-Allocation Parsing | `ReadOnlySequence<byte>`  | Eliminates intermediate string/array copies.     |
+| Backpressure            | `PipeReader / FlushAsync` | Pauses reading if the buffer exceeds capacity.   | 
+| GC Pressure             | `readonly record structs` | Keeps data on the stack; minimizes object churn. | 
+| I/O Efficiency          | `ValueTask`               | Reduces overhead for asynchronous operations.    | 
 
 <details>
 <summary><b>🚀 Benchmark Metrics (Zero-Allocation)</b></summary>
 
 | Operation | Encoding | Decoding | Total Latency | Allocated |
 |:----------|:---------|:---------|:--------------|:----------|
-| Ack       | 1.07 ns  | 36.71 ns | 37.78 ns      | 0 B       
-| Heartbeat | 14.07 ns | 54.55 ns | 68.62 ns      | 0 B       |
 | Login     | 18.24 ns | 64.29 ns | 82.53 ns      | 0 B       |
+| Heartbeat | 14.07 ns | 54.55 ns | 68.62 ns      | 0 B       |
+| Ack       | 1.07 ns  | 36.71 ns | 37.78 ns      | 0 B       |
 
-Note: Achieved zero GC pressure via `System.IO.Pipelines` and `Span<byte>` under extreme load.
+Note: Benchmarked using BenchmarkDotNet on the hot-path message loop
 </details>
 
 ---
 
-### 🏗 Architecture Notes
+### 📦 Protocol Specification
 
-- **Strict Protocol Validation:** Prevents buffer overflow or "Slowloris"-style attacks
-- **Thread-Safe Sessions:** High-performance concurrent collections manage device contexts safely
+Data is transmitted as a packed binary stream for maximum efficiency.
 
 ---
 
 ### 🏗 Architecture Diagram
 
 ```mermaid
-flowchart LR
-
+    flowchart LR
     devices[Devices] -->|TCP Connections| gateway[TCP Gateway Server]
-
     gateway -->|Metrics| prometheus[Prometheus]
     prometheus --> grafana[Grafana]
-
     gateway -->|Logs| loki[Loki]
     loki --> grafana
 ```
+
 ---
 
+### 📊 Observability & Monitoring
+
+The system provides a "Single Pane of Glass" view into the gateway's health using Prometheus for telemetry and Grafana
+Loki for distributed logging.
+
 <details>
-<summary><b>📊 Dashboard & Observability</b></summary>
-  
-Real-time monitoring via Grafana dashboards linked with Prometheus metrics and Loki logs.
+<summary><b>View Dashboard Screenshots</b></summary>
+
+#### Real-time tracking of 10k+ active sessions and handshake latencies:
 
 ![Grafana Dashboard Screenshot](./Dashboards/Images/MetricsDashboard.png)
-![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceGatewayLogs.png)
-![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceSimulatorLogs.png)
 
-#### Metrics Exposed
+##### Metrics Exposed:
 
 - `gateway_devices_expected_total`: The target number of devices configured for this simulation run.
 - `gateway_active_connections`: Current established TCP sessions.
@@ -140,16 +110,37 @@ Real-time monitoring via Grafana dashboards linked with Prometheus metrics and L
 - `gateway_login_duration_seconds`: Latency tracking for handshake sequences.
 - `gateway_heartbeat_duration_seconds`: Tracks how long the server takes to respond to a heartbeat request.
 
+#### Structured logs correlated with metric spikes for rapid debugging:
+
+![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceGatewayLogs.png)
+![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceSimulatorLogs.png)
+
 </details>
 
 ---
 
-## 🎯 What This Demonstrates
+### 🔄 Connection Lifecycle
 
-- High-concurrency network server design
-- Low-level performance optimization in .NET
-- Real-world observability (metrics + logs + dashboards)
-- Production-style system design and deployment
+1. **Connect:** Device establishes a TCP socket.
+2. **Login:** Device must send a valid `Login` message within a defined window to be registered.
+3. **Stay Alive:** Device sends periodic `Heartbeat` messages to maintain the session.
+4. **Disconnect:** Automatically handled when the socket is closed or a heartbeat timeout is triggered.
+
+---
+
+### 📂 Project Structure
+
+```text
+├── Gateway.Server/          # Core TCP engine (Pipelines & socket handling)
+├── Gateway.Protocol/        # Protocol parsing & encoding
+├── Gateway.Protocol.Tests/  # Unit tests
+├── Benchmarks/              # BenchmarkDotNet suites
+├── Gateway.Monitoring/      # Metrics & observability logic
+├── Device.Simulator/        # Load testing tool
+├── Dashboards/              # Grafana dashboards & images
+├── prometheus/              # Prometheus configuration
+└── docker-compose.yaml      # Monitoring stack setup
+```
 
 ---
 
@@ -164,18 +155,17 @@ Real-time monitoring via Grafana dashboards linked with Prometheus metrics and L
 
 ### 📋 Prerequisites
 
-- .NET SDK (8 or later)
+- .NET 10 SDK (or later)
 - Docker & Docker Compose
 
 ---
 
 ### ⚡ How to Run
-> Make sure Docker is running before starting the monitoring stack.
 
 #### 1. Start Monitoring Stack
 
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 
 - Prometheus: http://localhost:9090
@@ -187,16 +177,14 @@ docker-compose up
 dotnet run --project Gateway.Server/Gateway.Server.csproj
 ```
 
-- Source Code: [Gateway.Server.csproj](./Gateway.Server/Gateway.Server.csproj)
 - Verify Metrics: http://localhost:2222
 
-#### 3. Run the Simulator
+#### 3. Run the Load Simulator
 
 ```bash
 dotnet run --project Device.Simulator/Device.Simulator.csproj
 ```
 
-- Source Code: [Device.Simulator.csproj](./Device.Simulator/Device.Simulator.csproj)
 - Verify Metrics: http://localhost:3333
 
 #### 4. Import Dashboards
@@ -208,19 +196,12 @@ dotnet run --project Device.Simulator/Device.Simulator.csproj
     - `Dashboards/Images/DeviceSimulator_Logs.json`
 3. Paste the JSON model or upload the file and click **Import**.
 
---- 
-
-### Troubleshooting
-
-- Ensure Loki container is running and Serilog points to correct endpoint
-- Make sure Grafana dashboards load — all Docker containers must be running
-
 ---
 
 ### 🚧 Future Improvements
 
 - TLS for secure device communication
 - Horizontal scaling (multi-instance gateway)
-- Kafka / RabbitMQ integration
-- Advanced rate limiting & device throttling
+- Kafka / RabbitMQ integration for downstream data processing.
+- Advanced rate limiting & device throttling.
 
