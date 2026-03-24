@@ -4,9 +4,9 @@ namespace Device.Simulator.Messaging;
 
 public interface IMessageSender
 {
-    Task<bool> SendLoginMessageAsync(byte[] message, DeviceConnectionContext context,
-        CancellationToken cancellationToken = default);
-
-    Task<bool> SendHeartbeatMessageAsync(byte[] message, DeviceConnectionContext context,
+    Task<bool> SendWithRetryAsync(
+        int position,
+        DeviceConnectionContext context,
+        string messageName,
         CancellationToken cancellationToken = default);
 }

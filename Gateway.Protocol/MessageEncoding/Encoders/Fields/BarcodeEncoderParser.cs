@@ -1,4 +1,3 @@
-using System.Text;
 using Gateway.Protocol.MessageEncoding.Base.Interfaces;
 using Gateway.Protocol.Payloads;
 
@@ -8,7 +7,12 @@ public class BarcodeEncoderParser : IFieldEncoder<BarcodePayload>
 {
     public void Encode(Span<byte> buffer, BarcodePayload payload, ref int position)
     {
-        Encoding.ASCII.GetBytes(payload.Barcode, buffer.Slice(position, BarcodePayload.FixedSize));
+        ReadOnlySpan<byte> barcodeBytes = payload.AsSpan();
+
+        if (barcodeBytes.Length != BarcodePayload.FixedSize)
+            throw new InvalidDataException("Invalid Barcode length for encoding");
+
+        barcodeBytes.CopyTo(buffer.Slice(start: position, length: BarcodePayload.FixedSize));
         position += BarcodePayload.FixedSize;
     }
 }

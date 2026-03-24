@@ -6,9 +6,9 @@ public readonly record struct LoginPayload(
 ) : IPayload
 {
     public static int FixedSize =>
-        1 +
-        1 +
+        1 + // startByte
+        1 + // messageTypeByte
         BarcodePayload.FixedSize +
         TimestampPayload.FixedSize +
-        1;
+        1; // endByte
 }

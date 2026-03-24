@@ -27,15 +27,25 @@ public abstract class RoundTripTestBase<TEncoder, TDecoder, TPayload>
         var encoder = provider.GetRequiredService<TEncoder>();
         var decoder = provider.GetRequiredService<TDecoder>();
 
-        // encode
-        var buffer = encoder.Encode(SamplePayload);
+        byte[] sharedBuffer = ArrayPool<byte>.Shared.Rent(TPayload.FixedSize);
+        try
+        {
+            // encode
+            Span<byte> buffer = sharedBuffer;
+            var position = encoder.Encode(buffer, SamplePayload);
 
-        // decode
-        var sequence = new ReadOnlySequence<byte>(buffer);
-        var reader = new SequenceReader<byte>(sequence);
-        var decodedResult = decoder.Decode(ref reader);
+            // decode
+            var sequence = new ReadOnlySequence<byte>(sharedBuffer, 0, position);
+            var reader = new SequenceReader<byte>(sequence);
+            var decodedResult = decoder.Decode(ref reader);
 
-        Assert.Equal(SamplePayload, decodedResult);
+            Assert.Equal(SamplePayload, decodedResult);
+            Assert.Equal(0, reader.Remaining); // Ensure we read everythin
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(sharedBuffer);
+        }
     }
 
     protected virtual void AddDependencies(IServiceCollection services)

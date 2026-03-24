@@ -19,8 +19,7 @@ public class TcpDeviceConnectionHandler(
     DeviceConnectionManager connectionManager,
     IMessageEncoder<AckPayload> ackMessageEncoder,
     IOptions<DeviceConnectionOptions> deviceConnectionOptions,
-    IMessageDispatcher messageDispatcher,
-    IMetricsService metrics
+    IMessageDispatcher messageDispatcher
 ) : IDeviceConnectionAcceptor
 {
     public async Task AcceptClient(TcpClient client, CancellationToken cancellationToken = default)
@@ -34,7 +33,7 @@ public class TcpDeviceConnectionHandler(
             Reader = PipeReader.Create(client.GetStream()),
             Writer = PipeWriter.Create(client.GetStream())
         };
-        
+
         var id = connectionManager.Add(context);
         await RunAsync(id, context, cancellationToken);
     }
@@ -68,24 +67,25 @@ public class TcpDeviceConnectionHandler(
                     context.RemoteEndPoint);
             }
         }
-        catch (IOException ex) when (ex.InnerException is SocketException socketEx &&
-                                     (socketEx.SocketErrorCode == SocketError.OperationAborted ||
-                                      socketEx.SocketErrorCode == SocketError.ConnectionReset))
+        catch (IOException ex) when (ex.InnerException is SocketException
+                                     {
+                                         SocketErrorCode:
+                                         SocketError.OperationAborted or
+                                         SocketError.ConnectionReset or
+                                         SocketError.ConnectionAborted
+                                     })
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Connection closed for {device} during server shutdown.",
-                    context.DeviceBarcode);
-            }
-            else
-            {
-                logger.LogWarning("Device {device} forcibly closed the connection (Connection Reset).",
-                    context.DeviceBarcode);
-            }
+            logger.LogWarning(
+                cancellationToken.IsCancellationRequested
+                    ? "Connection closed for {device} during server shutdown."
+                    : "Device {device} closed the connection (aborted/reset).",
+                context.DeviceBarcode);
         }
+
         catch (Exception ex)
         {
-            logger.LogError(ex, message: "Unexpected connection error at {endpoint}", context.RemoteEndPoint);
+            logger.LogError("Unexpected connection error at {endpoint}: {error}\n {stackTrace}", context.RemoteEndPoint,
+                ex.Message, ex.StackTrace);
         }
         finally
         {
@@ -120,14 +120,13 @@ public class TcpDeviceConnectionHandler(
 
                     if (context.DeviceChannel.Writer.TryWrite(msg))
                     {
-                        var ack = ackMessageEncoder.Encode(new AckPayload());
-                        await context.Writer.WriteAsync(ack, timeoutCts.Token);
+                        Span<byte> ackBuffer = context.Writer.GetSpan(AckPayload.FixedSize);
+                        var bytesWritten = ackMessageEncoder.Encode(ackBuffer, new AckPayload());
+                        context.Writer.Advance(bytesWritten);
                         await context.Writer.FlushAsync(timeoutCts.Token);
-                        if (logger.IsEnabled(LogLevel.Debug))
-                        {
-                            // Only pay for the hex conversion if we are actually debugging
-                            logger.LogHex(ack, $"[{context.DeviceBarcode}] Rx:");
-                        }
+                        logger.LogHex(
+                            new ReadOnlySequence<byte>(context.Writer.GetMemory()[..bytesWritten]),
+                            $"[{context.DeviceBarcode}] Rx:");
                     }
 
                     consumed = buffer.Start;

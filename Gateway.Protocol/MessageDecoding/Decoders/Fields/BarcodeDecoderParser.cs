@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Text;
 using Gateway.Protocol.MessageDecoding.Base.Interfaces;
 using Gateway.Protocol.Payloads;
 
@@ -11,10 +10,9 @@ public sealed class BarcodeDecoderParser : IFieldDecoder<BarcodePayload>
     {
         if (reader.Remaining < BarcodePayload.FixedSize)
             throw new InvalidDataException("Buffer too small for Barcode");
-        
-        ReadOnlySpan<byte> span = reader.UnreadSpan.Slice(0, BarcodePayload.FixedSize);
-        string barcode = Encoding.ASCII.GetString(span);
+
+        var barcodeSlice = reader.Sequence.Slice(reader.Position, BarcodePayload.FixedSize);
         reader.Advance(BarcodePayload.FixedSize);
-        return new BarcodePayload(barcode);
+        return new BarcodePayload(barcodeSlice.First);
     }
 }
