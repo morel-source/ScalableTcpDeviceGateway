@@ -16,8 +16,8 @@ public class LoginMessageHandler(
     {
         using (metrics.MeasureLoginProcess())
         {
-            context.DeviceBarcode = payload.DeviceBarcode.Barcode;
-            logger.LogInformation("[Login] [{DeviceId}] logged in", context.DeviceBarcode);
+            context.DeviceBarcode = payload.DeviceBarcode.Value;
+            logger.LogInformation("[{barcode}] [Login]", context.DeviceBarcode);
             metrics.IncrementLoginConnections();
             return Task.CompletedTask;
         }

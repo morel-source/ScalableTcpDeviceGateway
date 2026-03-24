@@ -125,8 +125,6 @@ public class DeviceSimulatorService(
                 var result = await context.Reader.ReadAsync(connectionCts.Token);
                 var buffer = result.Buffer;
 
-                logger.LogHex(buffer, $"[{context.DeviceBarcode}] Rx:");
-
                 if (result.IsCompleted || buffer.IsEmpty)
                 {
                     break; // Connection closed by server
@@ -150,7 +148,7 @@ public class DeviceSimulatorService(
         }
         finally
         {
-            // IMPORTANT: Tell the sender/heartbeat loop to stop because the reader is dead
+            // tell the sender/heartbeat loop to stop because the reader is dead
             await connectionCts.CancelAsync();
         }
     }

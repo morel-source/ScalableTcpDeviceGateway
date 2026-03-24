@@ -16,8 +16,8 @@ public class HeartbeatMessageHandler(
     {
         using (metrics.MeasureHeartBeatProcess())
         {
-            context.DeviceBarcode = payload.DeviceBarcode.Barcode;
-            logger.LogInformation("[{barcode} [Heartbeat]", context.DeviceBarcode);
+            context.DeviceBarcode = payload.DeviceBarcode.Value;
+            logger.LogInformation("[{barcode}] [Heartbeat]", context.DeviceBarcode);
             metrics.IncrementHeartBeatConnections();
             return Task.CompletedTask;
         }

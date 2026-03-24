@@ -6,8 +6,7 @@ namespace Gateway.Server.Connections;
 
 public sealed class DeviceConnectionManager(
     ILogger<DeviceConnectionManager> logger,
-    IMetricsService metrics
-)
+    IMetricsService metrics)
 {
     private readonly ConcurrentDictionary<Guid, DeviceConnectionContext> _connections = new();
 
@@ -27,15 +26,46 @@ public sealed class DeviceConnectionManager(
         {
             try
             {
+                // Stop sending more data
                 context.DeviceChannel.Writer.TryComplete();
-                context.TcpClient.Dispose(); // Dispose is safer than Close here
-                await context.Reader.CompleteAsync();
-                await context.Writer.CompleteAsync();
-                logger.LogInformation("Cleanup [{barcode}] {msg}", context.DeviceBarcode, context.RemoteEndPoint);
+
+                // Complete pipelines safely
+                try
+                {
+                    await context.Writer.CompleteAsync();
+                }
+                catch (IOException ioEx)
+                {
+                    logger.LogDebug("Writer completion failed (expected on disconnect): {message}", ioEx.Message);
+                }
+                catch (ObjectDisposedException)
+                {
+                    /* already disposed, ignore */
+                }
+
+                try
+                {
+                    await context.Reader.CompleteAsync();
+                }
+                catch (IOException ioEx)
+                {
+                    logger.LogDebug("Reader completion failed (expected on disconnect): {message}", ioEx.Message);
+                }
+                catch (ObjectDisposedException)
+                {
+                    /* already disposed, ignore */
+                }
+
+                // Final cleanup
+                context.TcpClient.Dispose();
+
+                logger.LogInformation("Cleanup [{barcode}] {msg}",
+                    context.DeviceBarcode, context.RemoteEndPoint);
             }
             catch (Exception ex)
             {
-                logger.LogError("Cleanup error: {msg}", ex.Message);
+                logger.LogError("Unexpected cleanup error: {message}\n {stackTrace}",
+                    ex.Message, ex.StackTrace);
             }
             finally
             {
@@ -44,6 +74,7 @@ public sealed class DeviceConnectionManager(
             }
         }
     }
+
 
     public async Task CloseConnections()
     {

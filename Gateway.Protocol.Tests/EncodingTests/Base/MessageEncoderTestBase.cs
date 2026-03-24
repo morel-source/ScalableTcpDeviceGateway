@@ -3,6 +3,7 @@ using Gateway.Protocol.Payloads;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Assert = Xunit.Assert;
 
 namespace Gateway.Protocol.Tests.EncodingTests.Base;
 
@@ -26,10 +27,16 @@ public abstract class MessageEncoderTestBase<TTest, TEncoder, TPayload>
 
         var serviceProvider = services.BuildServiceProvider();
         var encoder = serviceProvider.GetRequiredService<TEncoder>();
+
+        Span<byte> buffer = stackalloc byte[TPayload.FixedSize];
+        var result = encoder.Encode(buffer, testCase.Input);
+        Assert.True(testCase.ExpectedBuffer.AsSpan().SequenceEqual(buffer[..result]));
         
-        var result = encoder.Encode(testCase.Input);
-        AssertHelper.Equal(testCase.ExpectedBuffer, result);
+        bool matches = testCase.ExpectedBuffer.AsSpan().SequenceEqual(buffer);
+        Assert.True(matches, $"Test '{testCase.TestName}' failed: Buffers are not equal.");
     }
 
-    protected virtual void AddDependencies(IServiceCollection services){}
+    protected virtual void AddDependencies(IServiceCollection services)
+    {
+    }
 }

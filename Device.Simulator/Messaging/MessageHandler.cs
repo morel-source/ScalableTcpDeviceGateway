@@ -21,16 +21,32 @@ public class MessageHandler(
     public async Task<bool> SendLoginAsync(DeviceConnectionContext context,
         CancellationToken cancellationToken = default)
     {
-        var payload = new LoginPayload(
+        var message = new LoginPayload(
             new BarcodePayload(context.DeviceBarcode),
             new TimestampPayload(DateTime.Now));
 
-        var message = loginEncoder.Encode(payload);
-
         try
         {
-            return await messageSender.SendLoginMessageAsync(message, context, cancellationToken)
-                .ConfigureAwait(false);
+            bool success = false;
+            int retryCount = 0;
+
+            while (retryCount < 3)
+            {
+                var buffer = context.Writer.GetSpan(LoginPayload.FixedSize);
+                var position = loginEncoder.Encode(buffer, message);
+                success = await messageSender
+                    .SendWithRetryAsync(position, context, messageName: "LOGIN", cancellationToken)
+                    .ConfigureAwait(false);
+                if (success)
+                {
+                    break;
+                }
+
+                retryCount++;
+                logger.LogWarning("[{device}] [{type}] retry {retry}", context.DeviceBarcode, "LOGIN", retryCount);
+            }
+
+            return success;
         }
         catch (Exception ex) when (ex is OperationCanceledException or TaskCanceledException)
         {
@@ -38,7 +54,8 @@ public class MessageHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "[{device}] Login failed ", context.DeviceBarcode);
+            logger.LogError("[{device}] Login failed: {message}\n {stackTrace} ", context.DeviceBarcode, ex.Message,
+                ex.StackTrace);
             return false;
         }
     }
@@ -58,15 +75,34 @@ public class MessageHandler(
                     break;
                 }
 
+                bool success = false;
+                int retryCount = 0;
+
                 var payload = new HeartbeatPayload(new BarcodePayload(context.DeviceBarcode),
                     new TimestampPayload(DateTime.Now));
 
-                var message = heartbeatEncoder.Encode(payload);
+                while (retryCount < 3)
+                {
+                    var buffer = context.Writer.GetSpan(HeartbeatPayload.FixedSize);
+                    var position = heartbeatEncoder.Encode(buffer, payload);
+                    success = await messageSender
+                        .SendWithRetryAsync(position, context, messageName: "HEARTBEAT", cancellationToken)
+                        .ConfigureAwait(false);
 
-                var success = await messageSender.SendHeartbeatMessageAsync(message, context, cancellationToken)
-                    .ConfigureAwait(false);
+                    if (success)
+                    {
+                        break;
+                    }
 
-                if (success) continue;
+                    retryCount++;
+                    logger.LogWarning("[{device}] [{type}] retry {retry}", context.DeviceBarcode, "LOGIN", retryCount);
+                }
+
+                if (success)
+                {
+                    continue;
+                }
+
                 logger.LogWarning("[{device}] [TIMEOUT] Heartbeat ACK missing", context.DeviceBarcode);
                 break; // close connection
             }

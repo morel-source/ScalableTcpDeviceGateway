@@ -4,5 +4,5 @@ namespace Gateway.Protocol.MessageEncoding.Base.Interfaces;
 
 public interface IMessageEncoder<in TPayload> where TPayload : IPayload
 {
-    byte[] Encode(TPayload payload);
+    int Encode(Span<byte> buffer, TPayload payload);
 }
