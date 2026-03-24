@@ -54,12 +54,15 @@ public static class DeviceSimulatorExtensions
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.FromLogContext()
-                .Enrich.WithProperty("Application", "TcpDeviceSimulator")
                 .WriteTo.Console(
-                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+                    outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
                 ).WriteTo.GrafanaLoki(
-                    "http://localhost:3100",
-                    propertiesAsLabels: ["level", "Application"], 
+                    uri: "http://localhost:3100",
+                    labels:
+                    [
+                        new LokiLabel { Key = "Application", Value = "TcpDeviceSimulator" }
+                    ],
+                    propertiesAsLabels: ["level"],
                     textFormatter: new Serilog.Formatting.Display.MessageTemplateTextFormatter(
                         "{Message:lj}{NewLine}{Exception}"))
                 .CreateLogger();

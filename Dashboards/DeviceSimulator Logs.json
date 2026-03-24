@@ -27,19 +27,11 @@
       },
       "fieldConfig": {
         "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "level"
-            },
-            "properties": []
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 18,
-        "w": 24,
+        "w": 18,
         "x": 0,
         "y": 0
       },
@@ -47,7 +39,7 @@
       "options": {
         "dedupStrategy": "none",
         "detailsMode": "inline",
-        "enableInfiniteScrolling": true,
+        "enableInfiniteScrolling": false,
         "enableLogDetails": true,
         "fontSize": "small",
         "prettifyLogMessage": false,
@@ -56,8 +48,9 @@
         "showLabels": false,
         "showTime": true,
         "sortOrder": "Descending",
-        "syntaxHighlighting": false,
-        "unwrappedColumns": true,
+        "syntaxHighlighting": true,
+        "timestampResolution": "ms",
+        "unwrappedColumns": [],
         "wrapLogMessage": true
       },
       "pluginVersion": "12.4.1",
@@ -69,30 +62,193 @@
           },
           "direction": "backward",
           "editorMode": "builder",
-          "expr": "{Application=~\"TcpDeviceSimulator\"}",
+          "expr": "{Application=\"TcpDeviceSimulator\"} | level =~ `$level`",
           "queryType": "range",
           "refId": "A"
         }
       ],
       "title": "Device Simulator Logs",
       "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "cfgqaeqfq2osge"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "debug"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "blue",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "info"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warning"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "yellow",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 6,
+        "minVizWidth": 1,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": false,
+        "sizing": "manual",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "direction": "backward",
+          "editorMode": "builder",
+          "expr": "sum by(level) (count_over_time({Application=\"TcpDeviceSimulator\"} [$__range]))",
+          "legendFormat": "{{level}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs Count by Level ",
+      "type": "bargauge"
     }
   ],
   "preload": false,
-  "refresh": "5s",
+  "refresh": "auto",
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": ".+",
+        "current": {
+          "text": "$__all",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "label": "Log Level",
+        "name": "level",
+        "options": [],
+        "query": "info,debug,warning,error",
+        "type": "custom",
+        "valuesFormat": "csv"
+      }
+    ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Device Simulator Logs",
   "uid": "ad8k7jc",
-  "version": 23,
+  "version": 33,
   "weekStart": ""
 }
