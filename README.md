@@ -131,15 +131,21 @@ Loki for distributed logging.
 ### 📂 Project Structure
 
 ```text
-├── Gateway.Server/          # Core TCP engine (Pipelines & socket handling)
-├── Gateway.Protocol/        # Protocol parsing & encoding
-├── Gateway.Protocol.Tests/  # Unit tests
-├── Benchmarks/              # BenchmarkDotNet suites
-├── Gateway.Monitoring/      # Metrics & observability logic
-├── Device.Simulator/        # Load testing tool
-├── Dashboards/              # Grafana dashboards & images
-├── prometheus/              # Prometheus configuration
-└── docker-compose.yaml      # Monitoring stack setup
+
+├── Gateway.Server/               # Core TCP engine (Pipelines & socket handling)
+├── Gateway.Protocol/             # Protocol parsing & encoding
+├── Gateway.Protocol.Tests/       # Unit tests
+├── Benchmarks/                   # BenchmarkDotNet suites for performance testing
+├── Device.Simulator/             # Load testing and device simulation tool
+├── Gateway.Monitoring/           # Metrics & observability stack
+├── Metrics/     
+│   ├── grafana/                  # Grafana provisioning configs
+│   │   ├── dashboards/           # Dashboard provisioning YAML & JSON
+│   │   └── datasources/          # Datasource provisioning YAML
+│   ├── prometheus/               # Prometheus configuration files
+│   ├── loki/                     # Loki configuration files
+│   └── images/                   # Exported dashboard images/screenshots
+└── docker-compose.yaml           # Monitoring stack setup (Prometheus, Grafana, Loki)
 ```
 
 ---
