@@ -12,9 +12,13 @@ public class PrometheusMetricServerHostedService(
 ) : IHostedService
 {
     private KestrelMetricServer? _server;
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _server = new KestrelMetricServer(port: options.Value.KestrelMetricServerPort);
+        _server = new KestrelMetricServer(
+            hostname: options.Value.KestrelMetricServerHost,
+            port: options.Value.KestrelMetricServerPort
+        );
         try
         {
             _server.Start();

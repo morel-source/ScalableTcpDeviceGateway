@@ -5,7 +5,7 @@
         "builtIn": 1,
         "datasource": {
           "type": "prometheus",
-          "uid": "fffp5n9zrg45cb"
+          "uid": "prometheus-ds"
         },
         "enable": true,
         "hide": true,
@@ -22,7 +22,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -78,7 +78,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -137,7 +137,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -193,7 +193,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -252,7 +252,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -311,7 +311,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -456,7 +456,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -553,7 +553,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -648,7 +648,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -760,7 +760,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
@@ -853,7 +853,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "fffp5n9zrg45cb"
+        "uid": "prometheus-ds"
       },
       "fieldConfig": {
         "defaults": {
