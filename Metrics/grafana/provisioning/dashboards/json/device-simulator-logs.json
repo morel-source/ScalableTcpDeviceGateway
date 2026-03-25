@@ -23,7 +23,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "cfgqaeqfq2osge"
+        "uid": "loki-ds"
       },
       "fieldConfig": {
         "defaults": {},
@@ -58,7 +58,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "cfgqaeqfq2osge"
+            "uid": "loki-ds"
           },
           "direction": "backward",
           "editorMode": "builder",
@@ -73,7 +73,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "cfgqaeqfq2osge"
+        "uid": "loki-ds"
       },
       "fieldConfig": {
         "defaults": {

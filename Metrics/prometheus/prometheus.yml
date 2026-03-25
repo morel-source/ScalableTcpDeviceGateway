@@ -6,13 +6,13 @@ scrape_configs:
   - job_name: "gateway-app"
     metrics_path: /metrics
     static_configs:
-      - targets: ["host.docker.internal:2222"] # need to change if changed in gateway app configurations
+      - targets: [ "host.docker.internal:2222" ]
         labels:
           app: gateway
 
   - job_name: "simulator-app"
     metrics_path: /metrics
     static_configs:
-      - targets: ["host.docker.internal:3333"] # need to change if changed in simulator configurations
+      - targets: [ "host.docker.internal:3333" ]
         labels:
           app: simulator
