@@ -187,15 +187,6 @@ dotnet run --project Device.Simulator/Device.Simulator.csproj
 
 - Verify Metrics: http://localhost:3333
 
-#### 4. Import Dashboards
-
-1. Open Grafana and go to **Dashboards → Import**.
-2. Import one of the following JSON files from the `Dashboards/` directory:
-    - `Dashboards/Images/ScalableTcpDeviceGateway_Metrics.json`
-    - `Dashboards/Images/DeviceGateway_Logs.json`
-    - `Dashboards/Images/DeviceSimulator_Logs.json`
-3. Paste the JSON model or upload the file and click **Import**.
-
 ---
 
 ### 🚧 Future Improvements
