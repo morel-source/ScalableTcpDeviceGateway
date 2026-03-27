@@ -72,7 +72,7 @@ public static class GatewayServiceCollectionExtensions
                 .WriteTo.Console(
                     outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.GrafanaLoki(
-                    uri: "http://localhost:3100",
+                    uri: builder.Configuration["LokiOptions:Url"] ?? "http://localhost:3100",
                     labels:
                     [
                         new LokiLabel { Key = "Application", Value = "TcpDeviceGateway" }

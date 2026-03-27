@@ -1,0 +1,32 @@
+# Defines how many copies of the app should run and which Docker image to use.
+
+
+apiVersion: apps/v1 # The API version for managing applications
+kind: Deployment # Defines the type of object, a Deployment to manage Pods
+metadata: # Metadata for this specific deployment
+  name: tcp-gateway # The name of the deployment itself
+  namespace: gateway-stack # Ensures this deployment lives inside the custom namespace
+spec: # The specification of how the deployment should behave.
+  replicas: 2  # The number of identical Pods (instances) to run at the same time
+  selector: # Tells the deployment which Pods it is responsible for managing
+    matchLabels: # Matches the labels defined in the Pod template below
+      app: tcp-gateway
+  template: # The template used to create the new Pods
+    metadata: # Metadata for the Pods being created
+      labels: # Labels used by the Selector and Service to find these Pods
+        app: tcp-gateway
+    spec: # The technical spec for the container running inside the Pod
+      containers: # A list of containers to run in this Pod
+        - name: gateway-server # The internal name for this specific container
+          image: tcp-gateway:latest # The Docker image to use
+          imagePullPolicy: Never # Tells K8s NOT to pull from the internet, uses local image 
+          ports: # Ports that the application is listening inside the container
+            - containerPort: 8888 # Port for the TCP device traffic
+            - containerPort: 2222 # Port for the Prometheus metrics
+          env: # Environment variables passed into .NET code
+            - name: ASPNETCORE_URLS
+              value: "http://+:2222;http://+:8888" # Tells .NET to listen on both 2222 and 8888
+            - name: LokiOptions__Url
+              value: "http://host.docker.internal:3100"# The URL for Loki log server 
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"# Sets the app to Production mode for performance

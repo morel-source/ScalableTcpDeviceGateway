@@ -1,0 +1,23 @@
+# Acts as a "load balancer" that gives a stable way to connect to the Pods from outside Kubernetes.
+
+
+apiVersion: v1 # The standard API version for networking
+kind: Service # Defines the type of object, a Service to expose the app
+metadata: # Metadata for the service
+  name: gateway-service # The name of the service used for internal DNS
+  namespace: gateway-stack  # Must be in the same namespace as the deployment
+spec: # The specification for how traffic is routed
+  type: NodePort # NodePort allows to access the service via PC's IP address 
+  selector: # Tells the service to send traffic to Pods with this label
+    app: tcp-gateway
+  ports: # The list of ports to expose
+    - name: device-traffic  # Label for the TCP device traffic port
+      protocol: TCP # The protocol used (TCP)
+      port: 8888   # The port number other Pods use to talk to this service
+      targetPort: 8888  # The port inside the container where the traffic is sent
+      nodePort: 30888 # The port that uses on Windows machine to connect (30888)
+    - name: metrics  # Label for the metrics port
+      protocol: TCP  # The protocol used (TCP)
+      port: 2222 # Internal service port for metrics
+      targetPort: 2222 # The metrics port inside the container
+      nodePort: 30222 # The port that uses on Windows machine to see metrics (30222) 
