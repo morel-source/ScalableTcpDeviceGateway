@@ -7,6 +7,7 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: [ "host.docker.internal:2222" ]
+      #- targets: [ "host.docker.internal:30222" ] Use this when gateway-app run using k8s.
         labels:
           app: gateway
 

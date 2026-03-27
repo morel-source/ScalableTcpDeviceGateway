@@ -2,6 +2,21 @@ version: "3.9"
 
 services:
   
+  gateway-app:
+    build: .
+    container_name: tcp-device-gatway
+    restart: unless-stopped
+    ports:
+      - "8888:8888" # TCP Traffic
+      - "2222:2222" # Metrics
+    environment:
+      - LokiOptions__Url=http://loki:3100
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - loki
+    networks:
+      - monitoring
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus

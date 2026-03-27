@@ -1,0 +1,7 @@
+# Creates a "virtual container" inside the cluster to keep the gateway project separate from other apps.
+
+
+apiVersion: v1 # Specifies the version of the Kubernetes API to use
+kind: Namespace # Defines the type of object, a Namespace for grouping resources
+metadata: # Data that helps uniquely identify the object
+  name: gateway-stack # The name of the workspace inside Kubernetes
