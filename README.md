@@ -9,16 +9,19 @@
 ### 🚀 Overview
 
 A high-performance IoT gateway capable of 10k+ concurrent connections, achieving near-zero allocation on the hot path
-via .NET 10 and `System.IO.Pipelines`
+via .NET 10 and `System.IO.Pipelines`.
 
 ---
 
 ### ❓ Why this project?
 
-In IoT and industrial automation, handling thousands of concurrent "chatty" devices is a common bottleneck. Traditional `async/await` patterns over standard streams can lead to high GC pressure and memory fragmentation under extreme load.
+In IoT and industrial automation, handling thousands of concurrent "chatty" devices is a common bottleneck. Traditional
+`async/await` patterns over standard streams can lead to high GC pressure and memory fragmentation under extreme load.
 
 This project demonstrates:
-- **High-Performance Networking:** Engineering a zero-copy TCP provider using `System.IO.Pipelines` to eliminate GC overhead.
+
+- **High-Performance Networking:** Engineering a zero-copy TCP provider using `System.IO.Pipelines` to eliminate GC
+  overhead.
 - **Cloud-Native Observability:** Implementing a "Golden Signals" monitoring stack with Prometheus, Grafana, and Loki.
 - **Advanced Concurrency:** Managing thousands of stateful device sessions using thread-safe, low-overhead patterns.
 
@@ -42,7 +45,7 @@ This project demonstrates:
 - **Memory Management:** `ArrayPool<T>` and `Span<T>` for buffer management.
 - **Observability:** Prometheus (Metrics), Grafana (Visualization), and Grafana Loki (Logging).
 - **CI/CD:** GitHub Actions (Automated build & test).
-- **Infrastructure:** Docker Compose (Monitoring stack).
+- **Orchestration:** Docker Compose & Kubernetes (K8s).
 
 ---
 
@@ -98,7 +101,7 @@ Loki for distributed logging.
 
 #### Real-time tracking of 10k+ active sessions and handshake latencies:
 
-![Grafana Dashboard Screenshot](./Dashboards/Images/MetricsDashboard.png)
+![Grafana Dashboard Screenshot](./Metrics/Images/device-gateway-simulator-metrics.png)
 
 ##### Metrics Exposed:
 
@@ -112,8 +115,8 @@ Loki for distributed logging.
 
 #### Structured logs correlated with metric spikes for rapid debugging:
 
-![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceGatewayLogs.png)
-![Grafana Dashboard Screenshot](./Dashboards/Images/DeviceSimulatorLogs.png)
+![Grafana Dashboard Screenshot](./Metrics/Images/device-gateway-logs.png)
+![Grafana Dashboard Screenshot](./Metrics/Images/device-simulator-logs.png)
 
 </details>
 
@@ -134,18 +137,28 @@ Loki for distributed logging.
 
 ├── Gateway.Server/               # Core TCP engine (Pipelines & socket handling)
 ├── Gateway.Protocol/             # Protocol parsing & encoding
-├── Gateway.Protocol.Tests/       # Unit tests
-├── Benchmarks/                   # BenchmarkDotNet suites for performance testing
-├── Device.Simulator/             # Load testing and device simulation tool
-├── Gateway.Monitoring/           # Metrics & observability stack
-├── Metrics/     
-│   ├── grafana/                  # Grafana provisioning configs
-│   │   ├── dashboards/           # Dashboard provisioning YAML & JSON
-│   │   └── datasources/          # Datasource provisioning YAML
-│   ├── prometheus/               # Prometheus configuration files
-│   ├── loki/                     # Loki configuration files
-│   └── images/                   # Exported dashboard images/screenshots
-└── docker-compose.yaml           # Monitoring stack setup (Prometheus, Grafana, Loki)
+├── Gateway.Protocol.Tests/       # Unit tests for protocol logic
+├── Gateway.Monitoring/           # Shared metrics & observability library
+├── Device.Simulator/             # High-concurrency load testing tool
+├── Benchmarks/                   # BenchmarkDotNet performance suites
+├── k8s/                          # Kubernetes Manifests
+│   ├── namespace.yaml            # Isolated environment setup
+│   ├── deployment.yaml           # App scaling & container specs
+│   └── service.yaml              # Networking & NodePort configuration
+├── scripts/                      # Automation & Lifecycle
+│   ├── run-local.bat             # Standalone development mode
+│   ├── run-docker.bat            # Containerized environment mode
+│   └── run-k8s.bat               # Kubernetes cluster deployment mode
+├── Metrics/                      # Monitoring Configuration
+│   ├── grafana/                  # Grafana provisioning & dashboards
+│   ├── prometheus/               # Prometheus scrape configurations
+│   ├── loki/                     # Loki log aggregation settings
+│   └── images/                   # Screenshots for the README
+├── gateway.bat                   # Main CLI controller (Menu)
+├── docker-compose.yaml           # Local monitoring stack setup
+├── Dockerfile                    # Multi-stage chiseled build
+└── .dockerignore                 # Build optimization rules
+
 ```
 
 ---
@@ -166,32 +179,58 @@ Loki for distributed logging.
 
 ---
 
-### ⚡ How to Run
+### 🚀 Deployment & Getting Started
 
-#### 1. Start Monitoring Stack
+This project is designed for architectural flexibility.
+You can manage the entire lifecycle of the gateway using the main `gateway.bat` controller located in the root directory.
 
-```bash
-docker-compose up -d
-```
+#### ⚡ Choose Your Environment
 
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000 (Default: admin/admin)
+Instead of running individual scripts, use the gateway command followed by the mode you wish to trigger:
 
-#### 2. Run the Server
+| Command        | Mode       | Best For...                 | What it does                                                |
+|:---------------|:-----------|:----------------------------|:------------------------------------------------------------|
+| gateway local  | Standalone | Quick code debugging        | Runs monitoring in Docker and the app via dotnet run.       |
+| gateway docker | Container  | Environment consistency     | Builds a Chiseled image and runs the full stack in Compose. |
+| gateway k8s    | Kubernetes | Scaling & High Availability | Deploys 2 replicas to a K8s namespace with NodePort access. |
+| gateway stop   | Cleanup    | Resource management         | Stops all Docker containers and deletes K8s manifests.      |    
 
-```bash
-dotnet run --project Gateway.Server/Gateway.Server.csproj
-```
+#### 🛠️ How to Use
 
-- Verify Metrics: http://localhost:2222
+1. **Open Terminal:** Open a command prompt in the project root.
+2. **Start:** Type your chosen command and press Enter.
+3. **Interact:** While the stack is active, connect simulators or view metrics via the configured ports.
+4. **Stop & Clean:** When finished, press Ctrl+C or a key as prompted in the window. To ensure everything is fully
+   cleared,
+   you can run `gateway stop`.
 
-#### 3. Run the Load Simulator
+--- 
+
+### 🧪 Testing the Load
+
+To simulate real-world device traffic, use the Load Simulator. This generates high-concurrency TCP connections to test the scaling capabilities of the Gateway.
 
 ```bash
 dotnet run --project Device.Simulator/Device.Simulator.csproj
-```
+````
 
-- Verify Metrics: http://localhost:3333
+---
+
+### 🚀 Ports Configuration
+
+#### Local / Docker Mode
+
+- Gateway TCP: `8888`
+- Metrics: `2222`
+- Prometheus: `9090`
+- Grafana: `3000` (User: `admin` / Pass: `admin`)
+
+#### Kubernetes Mode (NodePorts)
+
+- Gateway TCP: `30888`
+- Metrics: `30222`
+
+  Note: When running in Kubernetes mode, external tools like the `Device.Simulator` must target the NodePort (`30888`) to reach the gateway pods.
 
 ---
 
@@ -201,4 +240,6 @@ dotnet run --project Device.Simulator/Device.Simulator.csproj
 - Horizontal scaling (multi-instance gateway)
 - Kafka / RabbitMQ integration for downstream data processing.
 - Advanced rate limiting & device throttling.
+
+
 
