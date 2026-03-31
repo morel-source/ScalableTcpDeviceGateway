@@ -28,5 +28,5 @@ public readonly record struct BarcodePayload : IPayload
     public override int GetHashCode() =>
         Value?.GetHashCode(StringComparison.Ordinal) ?? 0;
 
-    public static int FixedSize => 6;
+    public int FixedSize => 6;
 }

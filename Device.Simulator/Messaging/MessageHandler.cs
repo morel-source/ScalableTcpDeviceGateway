@@ -1,9 +1,12 @@
 using System.Buffers;
 using Device.Simulator.Configuration;
 using Device.Simulator.Networking;
-using Gateway.Protocol.MessageDecoding.Decoders.Messages;
-using Gateway.Protocol.MessageEncoding.Base.Interfaces;
+using Gateway.Protocol.Enums;
+using Gateway.Protocol.Extensions;
+using Gateway.Protocol.MessageDecoding.Interfaces;
+using Gateway.Protocol.MessageEncoding.Interfaces;
 using Gateway.Protocol.Payloads;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,15 +15,17 @@ namespace Device.Simulator.Messaging;
 public class MessageHandler(
     ILogger<MessageHandler> logger,
     IOptions<SimulatorOptions> options,
-    IMessageEncoder<LoginPayload> loginEncoder,
-    IMessageEncoder<HeartbeatPayload> heartbeatEncoder,
-    AckMessageDecoderParser ackMessageDecoderParser,
-    IMessageSender messageSender
+    IMessageSender messageSender,
+    IServiceProvider serviceProvider,
+    IPacketDecoderParserHelper packetDecoderDecoderHelper,
+    IPacketEncoderParserHelper packetEncoderParserHelper
 ) : IMessageHandler
 {
     public async Task<bool> SendLoginAsync(DeviceConnectionContext context,
         CancellationToken cancellationToken = default)
     {
+        var messageType = MessageType.Login;
+
         var message = new LoginPayload(
             new BarcodePayload(context.DeviceBarcode),
             new TimestampPayload(DateTime.Now));
@@ -32,18 +37,20 @@ public class MessageHandler(
 
             while (retryCount < 3)
             {
-                var buffer = context.Writer.GetSpan(LoginPayload.FixedSize);
-                var position = loginEncoder.Encode(buffer, message);
+                var buffer = context.Writer.GetSpan(message.FixedSize + 4);
+
+                var position = packetEncoderParserHelper.EncodePayloadBytesIntoPacket(ref buffer, message);
+
                 success = await messageSender
-                    .SendWithRetryAsync(position, context, messageName: "LOGIN", cancellationToken)
+                    .SendWithRetryAsync(position, context, messageType: messageType, cancellationToken)
                     .ConfigureAwait(false);
+
                 if (success)
-                {
                     break;
-                }
 
                 retryCount++;
-                logger.LogWarning("[{device}] [{type}] retry {retry}", context.DeviceBarcode, "LOGIN", retryCount);
+                logger.LogWarning(message: "[{DeviceBarcode}] [{MessageType}] retry {Retry}", context.DeviceBarcode,
+                    messageType.GetName(), retryCount);
             }
 
             return success;
@@ -54,8 +61,8 @@ public class MessageHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError("[{device}] Login failed: {message}\n {stackTrace} ", context.DeviceBarcode, ex.Message,
-                ex.StackTrace);
+            logger.LogError(ex, message: "[{DeviceBarcode}] [{MessageType}] failed", context.DeviceBarcode,
+                nameof(messageType));
             return false;
         }
     }
@@ -63,6 +70,7 @@ public class MessageHandler(
     public async Task SendHeartbeatLoopAsync(DeviceConnectionContext context,
         CancellationToken cancellationToken = default)
     {
+        var messageType = MessageType.Heartbeat;
         using var timer = new PeriodicTimer(options.Value.HeartbeatInterval);
 
         try
@@ -71,7 +79,7 @@ public class MessageHandler(
             {
                 if (options.Value.SimulateDisconnections && Random.Shared.NextDouble() < 0.01)
                 {
-                    logger.LogInformation("[{device}] simulating random drop", context.DeviceBarcode);
+                    logger.LogInformation(message: "[{DeviceBarcode}] simulating random drop", context.DeviceBarcode);
                     break;
                 }
 
@@ -83,19 +91,19 @@ public class MessageHandler(
 
                 while (retryCount < 3)
                 {
-                    var buffer = context.Writer.GetSpan(HeartbeatPayload.FixedSize);
-                    var position = heartbeatEncoder.Encode(buffer, payload);
+                    var buffer = context.Writer.GetSpan(payload.FixedSize + 4);
+                    var position = packetEncoderParserHelper.EncodePayloadBytesIntoPacket(ref buffer, payload);
+
                     success = await messageSender
-                        .SendWithRetryAsync(position, context, messageName: "HEARTBEAT", cancellationToken)
+                        .SendWithRetryAsync(position, context, messageType: messageType, cancellationToken)
                         .ConfigureAwait(false);
 
                     if (success)
-                    {
                         break;
-                    }
 
                     retryCount++;
-                    logger.LogWarning("[{device}] [{type}] retry {retry}", context.DeviceBarcode, "LOGIN", retryCount);
+                    logger.LogWarning(message: "[{DeviceBarcode}] [{MessageType}] retry {Retry}", context.DeviceBarcode,
+                        messageType.GetName(), retryCount);
                 }
 
                 if (success)
@@ -103,7 +111,9 @@ public class MessageHandler(
                     continue;
                 }
 
-                logger.LogWarning("[{device}] [TIMEOUT] Heartbeat ACK missing", context.DeviceBarcode);
+                logger.LogWarning(message: "[{DeviceBarcode}] [TIMEOUT] [{MessageType}] ACK missing",
+                    context.DeviceBarcode, messageType.GetName());
+
                 break; // close connection
             }
         }
@@ -112,14 +122,23 @@ public class MessageHandler(
         }
     }
 
-    public bool TryParseAckFrame(ref ReadOnlySequence<byte> buffer)
+    public bool TryParseAckFrame(ref ReadOnlySequence<byte> buffer, out MessageType messageType)
     {
-        if (buffer.Length < AckPayload.FixedSize) return false;
-        var reader = new SequenceReader<byte>(buffer);
+        messageType = MessageType.Unknown;
         try
         {
-            var ack = ackMessageDecoderParser.Decode(ref reader);
-            buffer = buffer.Slice(reader.Position);
+            var success =
+                packetDecoderDecoderHelper.GetPayloadBytesFromPacket(sequence: ref buffer, out var body, out var msgType);
+         
+            if (success && msgType != MessageType.Ack)
+            {
+                logger.LogError("buffer is not recognize as Ack message");
+                return false;
+            }
+
+            var decoder = serviceProvider.GetRequiredKeyedService<IMessageDecoder>(msgType);
+            var ack = (AckPayload)decoder.Decode(body);
+            messageType = ack.MessageTypeAck;
             return true;
         }
         catch

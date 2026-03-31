@@ -1,11 +1,11 @@
-using Gateway.Protocol.MessageEncoding.Base.Interfaces;
+using Gateway.Protocol.MessageEncoding.Interfaces;
 using Gateway.Protocol.Payloads;
 
 namespace Gateway.Protocol.MessageEncoding.Encoders.Fields;
 
 public sealed class TimestampEncoderParser : IFieldEncoder<TimestampPayload>
 {
-    public void Encode(Span<byte> buffer, TimestampPayload payload, ref int position)
+    public void Encode(ref Span<byte> buffer, TimestampPayload payload, ref int position)
     {
         var dt = payload.Timestamp;
 

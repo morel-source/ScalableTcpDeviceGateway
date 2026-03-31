@@ -32,48 +32,48 @@ public class GatewayServer(
         _listener = TcpListener.Create(port);
         _listener.Start(backlog: options.Value.NumberOfWaitingClients);
 
-        logger.LogInformation("TCP Server started on port {port}", port);
+        logger.LogInformation(message: "TCP Server started on port {Port}", port);
 
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 var client = await _listener.AcceptTcpClientAsync(stoppingToken).ConfigureAwait(false);
-                logger.LogInformation("Client connected from {RemoteEndPoint}", client.Client.RemoteEndPoint);
+                logger.LogInformation(message: "Client connected from {RemoteEndPoint}", client.Client.RemoteEndPoint);
                 _ = connectionAcceptor.AcceptClient(client, stoppingToken);
             }
         }
         catch (Exception ex) when (stoppingToken.IsCancellationRequested || ex is SocketException)
         {
             // When _listener.Stop() is called, AcceptTcpClientAsync throws a SocketException.
-            logger.LogInformation("TCP Listener stopped and is no longer accepting new connections.");
+            logger.LogInformation(message: "TCP Listener stopped and is no longer accepting new connections.");
         }
         catch (Exception ex)
         {
             // errors that happen while the server is supposed to be running
-            logger.LogCritical(ex, "TCP Listener encountered a fatal error");
+            logger.LogCritical(ex, message: "TCP Listener encountered a fatal error");
         }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Gateway Server shutdown initiated...");
+        logger.LogInformation(message: "Gateway Server shutdown initiated...");
 
         // stopping the listener  first, this immediately stops new devices from connecting and breaks the loop in ExecuteAsync
         _listener?.Stop();
 
         try
         {
-            logger.LogInformation("Closing all active device connections...");
+            logger.LogInformation(message: "Closing all active device connections...");
             await manager.CloseConnections().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error occurred during graceful connection cleanup");
+            logger.LogError(ex, message: "Error occurred during graceful connection cleanup");
         }
 
         await base.StopAsync(cancellationToken).ConfigureAwait(false);
 
-        logger.LogInformation("Gateway Server stopped successfully.");
+        logger.LogInformation(message: "Gateway Server stopped successfully.");
     }
 }

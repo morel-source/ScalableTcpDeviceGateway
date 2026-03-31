@@ -1,12 +1,12 @@
 using System.Buffers;
-using Gateway.Protocol.MessageDecoding.Base.Interfaces;
+using Gateway.Protocol.MessageDecoding.Interfaces;
 using Gateway.Protocol.Payloads;
 
 namespace Gateway.Protocol.MessageDecoding.Decoders.Fields;
 
 public sealed class TimestampDecoderParser : IFieldDecoder<TimestampPayload>
 {
-    public TimestampPayload Decode(ref SequenceReader<byte> reader)
+    public Result<TimestampPayload> Decode(ref SequenceReader<byte> reader)
     {
         if (!(
                 reader.TryRead(out byte year) &&
@@ -16,8 +16,10 @@ public sealed class TimestampDecoderParser : IFieldDecoder<TimestampPayload>
                 reader.TryRead(out byte minute) &&
                 reader.TryRead(out byte second)
             ))
-            throw new InvalidDataException();
+            return Result<TimestampPayload>.Failure("fail to parse timestamp");
 
-        return new TimestampPayload(new DateTime(year + 2000, month, day, hour, minute, second));
+        return Result<TimestampPayload>.Success(new TimestampPayload(
+            new DateTime(year + 2000, month, day, hour, minute, second)
+        ));
     }
 }

@@ -1,16 +1,19 @@
-using Gateway.Protocol.MessageEncoding.Base.Interfaces;
+using Gateway.Protocol.MessageEncoding.Interfaces;
 using Gateway.Protocol.Payloads;
 
 namespace Gateway.Protocol.MessageEncoding.Base;
 
-public abstract class EncoderBase<TPayload> : IMessageEncoder<TPayload>
-    where TPayload : IPayload
+public abstract class EncoderBase<TPayload> : IMessageEncoder
+    where TPayload : IMessagePayload
 {
-    public int Encode(Span<byte> buffer, TPayload payload)
+    public void Encode(ref Span<byte> buffer, IMessagePayload payload, ref int position)
     {
-        var position = 0;
-        Encode(ref buffer, payload, ref position);
-        return position;
+        if (payload is not TPayload typedPayload)
+        {
+            throw new ArgumentException($"Payload must be of type {typeof(TPayload).Name}", nameof(payload));
+        }
+
+        Encode(ref buffer, typedPayload, ref position);
     }
 
     protected abstract void Encode(ref Span<byte> buffer, TPayload payload, ref int position);

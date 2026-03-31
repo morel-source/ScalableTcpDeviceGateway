@@ -34,38 +34,30 @@ public sealed class DeviceConnectionManager(
                 {
                     await context.Writer.CompleteAsync();
                 }
-                catch (IOException ioEx)
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException)
                 {
-                    logger.LogDebug("Writer completion failed (expected on disconnect): {message}", ioEx.Message);
-                }
-                catch (ObjectDisposedException)
-                {
-                    /* already disposed, ignore */
+                    logger.LogDebug(message: "Writer completion failed (expected): {Message}", ex.Message);
                 }
 
                 try
                 {
                     await context.Reader.CompleteAsync();
                 }
-                catch (IOException ioEx)
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException)
                 {
-                    logger.LogDebug("Reader completion failed (expected on disconnect): {message}", ioEx.Message);
-                }
-                catch (ObjectDisposedException)
-                {
-                    /* already disposed, ignore */
+                    logger.LogDebug(message: "Reader completion failed (expected on disconnect): {Message}",
+                        ex.Message);
                 }
 
                 // Final cleanup
                 context.TcpClient.Dispose();
 
-                logger.LogInformation("Cleanup [{barcode}] {msg}",
-                    context.DeviceBarcode, context.RemoteEndPoint);
+                logger.LogInformation(message: "Cleanup [{DeviceBarcode}] {RemoteEndPoint}", context.DeviceBarcode,
+                    context.RemoteEndPoint);
             }
             catch (Exception ex)
             {
-                logger.LogError("Unexpected cleanup error: {message}\n {stackTrace}",
-                    ex.Message, ex.StackTrace);
+                logger.LogError(ex, message: "Unexpected cleanup error");
             }
             finally
             {
@@ -78,7 +70,7 @@ public sealed class DeviceConnectionManager(
 
     public async Task CloseConnections()
     {
-        logger.LogInformation("Closing {Count} active connections...", _connections.Count);
+        logger.LogInformation(message: "Closing {Count} active connections...", _connections.Count);
 
         var keys = _connections.Keys.ToList();
 

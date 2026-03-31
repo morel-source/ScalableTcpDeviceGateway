@@ -10,14 +10,7 @@ public static class HandlerExtensions
 {
     public static void AddHandlers(this HostApplicationBuilder builder)
     {
-        builder.Services.AddSingleton<LoginMessageHandler>();
-        builder.Services.AddSingleton<HeartbeatMessageHandler>();
-
-        builder.Services.AddSingleton<IDictionary<MessageType, IHandler>>(sp =>
-            new Dictionary<MessageType, IHandler>
-            {
-                { MessageType.Login, sp.GetRequiredService<LoginMessageHandler>() },
-                { MessageType.Heartbeat, sp.GetRequiredService<HeartbeatMessageHandler>() }
-            });
+        builder.Services.AddKeyedSingleton<IMessageHandler, LoginMessageMessageHandler>(MessageType.Login);
+        builder.Services.AddKeyedSingleton<IMessageHandler, HeartbeatMessageMessageHandler>(MessageType.Heartbeat);
     }
 }
