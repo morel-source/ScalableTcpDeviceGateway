@@ -3,7 +3,7 @@ using Device.Simulator.Configuration;
 using Device.Simulator.Messaging;
 using Device.Simulator.Networking;
 using Gateway.Monitoring.Services;
-using Gateway.Protocol.Extensions;
+using Gateway.Protocol.Enums;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,7 +15,8 @@ public class DeviceSimulatorService(
     IHostApplicationLifetime hostApplicationLifetime,
     IOptions<SimulatorOptions> options,
     IMessageHandler messageHandler,
-    IMetricsService metricsService) : BackgroundService
+    IMetricsService metricsService
+) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -28,7 +29,7 @@ public class DeviceSimulatorService(
 
         int deviceCount = options.Value.DeviceCount;
         metricsService.SetExpectedDevices(deviceCount);
-        logger.LogInformation("Starting Device Simulator: {deviceCount} devices", deviceCount);
+        logger.LogInformation(message: "Starting Device Simulator: {Count} devices", deviceCount);
 
         // Limit CONCURRENT connection attempts to prevent server saturation
         using var connectionSemaphore = new SemaphoreSlim(options.Value.ConcurrentConnection);
@@ -37,22 +38,21 @@ public class DeviceSimulatorService(
 
         for (int i = 1; i <= deviceCount; i++)
         {
-            string deviceAddress = i.ToString("D6");
-            deviceTasks.Add(RunDeviceAsync(deviceAddress, connectionSemaphore, stoppingToken));
+            string deviceBarcode = i.ToString("D6");
+            deviceTasks.Add(RunDeviceAsync(deviceBarcode, connectionSemaphore, stoppingToken));
 
             // Prevent local CPU spikes during task creation
             if (i % 100 == 0)
                 await Task.Delay(5, stoppingToken);
         }
 
-        logger.LogInformation("All {count} tasks spawned. Monitoring connections...", deviceCount);
+        logger.LogInformation(message: "All {Count} tasks spawned. Monitoring connections...", deviceCount);
         await Task.WhenAll(deviceTasks).ConfigureAwait(false);
     }
 
-    private async Task RunDeviceAsync(string deviceAddress, SemaphoreSlim loginSemaphore,
-        CancellationToken cancellationToken = default) // Use 'ct' for app-lifetime
+    private async Task RunDeviceAsync(string deviceBarcode, SemaphoreSlim loginSemaphore,
+        CancellationToken cancellationToken = default)
     {
-        // Initial smear
         await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(0, options.Value.DeviceConnectionDelaySec)),
             cancellationToken);
 
@@ -80,7 +80,7 @@ public class DeviceSimulatorService(
                 }
 
 
-                using var context = new DeviceConnectionContext(tcpClient.GetStream(), deviceAddress);
+                using var context = new DeviceConnectionContext(tcpClient.GetStream(), deviceBarcode);
 
                 // Start background reader
                 var readerTask = RunReaderLoopAsync(context, connectionCts);
@@ -101,8 +101,8 @@ public class DeviceSimulatorService(
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
-                logger.LogWarning("[{device}] connection dropped: {msg}. Retrying in 30s...",
-                    deviceAddress, ex.Message);
+                logger.LogWarning(message: "[{DeviceBarcode}] connection dropped: {Message}. Retrying in 30s...",
+                    deviceBarcode, ex.Message);
 
                 try
                 {
@@ -130,9 +130,9 @@ public class DeviceSimulatorService(
                     break; // Connection closed by server
                 }
 
-                while (messageHandler.TryParseAckFrame(ref buffer))
+                if (messageHandler.TryParseAckFrame(ref buffer, out MessageType messageType))
                 {
-                    context.SignalAck();
+                    context.AckMessageChanel.SignalAck(messageType);
                 }
 
                 context.Reader.AdvanceTo(buffer.Start, buffer.End);
@@ -144,7 +144,7 @@ public class DeviceSimulatorService(
         catch (Exception ex)
         {
             if (!connectionCts.Token.IsCancellationRequested)
-                logger.LogError(ex, "Reader loop error for {device}", context.DeviceBarcode);
+                logger.LogError(ex, message: "Reader loop error for {DeviceBarcode}", context.DeviceBarcode);
         }
         finally
         {

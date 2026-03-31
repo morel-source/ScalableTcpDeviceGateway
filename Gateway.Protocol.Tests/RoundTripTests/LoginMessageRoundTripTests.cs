@@ -1,10 +1,7 @@
-using Gateway.Protocol.MessageDecoding.Decoders.Fields;
 using Gateway.Protocol.MessageDecoding.Decoders.Messages;
-using Gateway.Protocol.MessageEncoding.Encoders.Fields;
 using Gateway.Protocol.MessageEncoding.Encoders.Messages;
 using Gateway.Protocol.Payloads;
 using Gateway.Protocol.Tests.RoundTripTests.Base;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Gateway.Protocol.Tests.RoundTripTests;
 
@@ -15,12 +12,4 @@ public class LoginMessageRoundTripTests :
         new BarcodePayload("123456"),
         new TimestampPayload(new DateTime(year: 2026, month: 03, day: 18, hour: 14, minute: 30, second: 05))
     );
-
-    protected override void AddDependencies(IServiceCollection services)
-    {
-        services.AddSingleton<BarcodeDecoderParser>();
-        services.AddSingleton<TimestampDecoderParser>();
-        services.AddSingleton<BarcodeEncoderParser>();
-        services.AddSingleton<TimestampEncoderParser>();
-    }
 }

@@ -1,10 +1,10 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
-using Gateway.Monitoring.Services;
 using Gateway.Protocol.Enums;
 using Gateway.Protocol.Extensions;
-using Gateway.Protocol.MessageEncoding.Base.Interfaces;
+using Gateway.Protocol.MessageDecoding.Interfaces;
+using Gateway.Protocol.MessageEncoding.Interfaces;
 using Gateway.Protocol.Payloads;
 using Gateway.Server.Configuration;
 using Gateway.Server.Connections;
@@ -17,15 +17,16 @@ namespace Gateway.Server.Handlers;
 public class TcpDeviceConnectionHandler(
     ILogger<TcpDeviceConnectionHandler> logger,
     DeviceConnectionManager connectionManager,
-    IMessageEncoder<AckPayload> ackMessageEncoder,
     IOptions<DeviceConnectionOptions> deviceConnectionOptions,
-    IMessageDispatcher messageDispatcher
+    IMessageDispatcher messageDispatcher,
+    IPacketDecoderParserHelper packetDecoderParserHelper,
+    IPacketEncoderParserHelper packetEncoderParserHelper
 ) : IDeviceConnectionAcceptor
 {
     public async Task AcceptClient(TcpClient client, CancellationToken cancellationToken = default)
     {
         client.NoDelay = true;
-        var endpoint = client.Client.RemoteEndPoint?.ToString() ?? "unknown";
+        var endpoint = client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
         var context = new DeviceConnectionContext
         {
             RemoteEndPoint = endpoint,
@@ -58,12 +59,12 @@ public class TcpDeviceConnectionHandler(
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogInformation("Connection for {endpoint} closed due to server shutdown.",
+                logger.LogInformation(message: "Connection for {RemoteEndPoint} closed due to server shutdown.",
                     context.RemoteEndPoint);
             }
             else
             {
-                logger.LogWarning("Connection timed out (No Login/Heartbeat) from {endpoint}",
+                logger.LogWarning(message: "Connection timed out (No Login/Heartbeat) from {RemoteEndPoint}",
                     context.RemoteEndPoint);
             }
         }
@@ -75,24 +76,27 @@ public class TcpDeviceConnectionHandler(
                                          SocketError.ConnectionAborted
                                      })
         {
-            logger.LogWarning(
-                cancellationToken.IsCancellationRequested
-                    ? "Connection closed for {device} during server shutdown."
-                    : "Device {device} closed the connection (aborted/reset).",
-                context.DeviceBarcode);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                logger.LogWarning(message: "Connection closed for {DeviceBarcode} during server shutdown.",
+                    context.DeviceBarcode);
+            }
+            else
+            {
+                logger.LogWarning(message: "Device {DeviceBarcode} closed the connection (aborted/reset).",
+                    context.DeviceBarcode);
+            }
         }
 
         catch (Exception ex)
         {
-            logger.LogError("Unexpected connection error at {endpoint}: {error}\n {stackTrace}", context.RemoteEndPoint,
-                ex.Message, ex.StackTrace);
+            logger.LogError(ex, "Unexpected connection error at {Endpoint}", context.RemoteEndPoint);
         }
         finally
         {
             await connectionManager.RemoveAsync(id);
         }
     }
-
 
     private async Task ReadLoop(DeviceConnectionContext context, CancellationTokenSource timeoutCts)
     {
@@ -101,40 +105,31 @@ public class TcpDeviceConnectionHandler(
             var result = await context.Reader.ReadAsync(timeoutCts.Token).ConfigureAwait(false);
             var buffer = result.Buffer;
 
-            if (logger.IsEnabled(LogLevel.Debug) && !buffer.IsEmpty)
-            {
-                // Only pay for the hex conversion if we are actually debugging
-                logger.LogHex(result.Buffer, $"[{context.DeviceBarcode}] Tx:");
-            }
+            if (!buffer.IsEmpty)
+                logger.LogHex(buffer, $"[{context.DeviceBarcode}] Tx:");
 
             SequencePosition consumed = buffer.Start;
-            SequencePosition examined = buffer.Start;
+            SequencePosition examined = buffer.End;
 
             try
             {
-                while (TryParseFrame(ref buffer, out var frame))
+                while (packetDecoderParserHelper.GetPayloadBytesFromPacket(ref buffer, out var body,
+                           out var messageType))
                 {
                     timeoutCts.CancelAfter(deviceConnectionOptions.Value.HeartbeatTimeout);
 
-                    var msg = new IncomingMessage(context, Data: frame.ToArray());
+                    var data = new ReadOnlySequence<byte>(body.ToArray());
+                    var msg = new IncomingMessage(context, Data: data, messageType);
 
                     if (context.DeviceChannel.Writer.TryWrite(msg))
                     {
-                        Span<byte> ackBuffer = context.Writer.GetSpan(AckPayload.FixedSize);
-                        var bytesWritten = ackMessageEncoder.Encode(ackBuffer, new AckPayload());
-                        context.Writer.Advance(bytesWritten);
-                        await context.Writer.FlushAsync(timeoutCts.Token);
-                        logger.LogHex(
-                            new ReadOnlySequence<byte>(context.Writer.GetMemory()[..bytesWritten]),
-                            $"[{context.DeviceBarcode}] Rx:");
+                        await SendAck(context, messageType, timeoutCts.Token);
                     }
-
-                    consumed = buffer.Start;
                 }
 
-                if (result.IsCompleted) break;
+                consumed = buffer.Start;
 
-                examined = buffer.End;
+                if (result.IsCompleted) break;
             }
             finally
             {
@@ -143,42 +138,17 @@ public class TcpDeviceConnectionHandler(
         }
     }
 
-    private bool TryParseFrame(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> frame)
+    private async Task SendAck(DeviceConnectionContext context, MessageType messageType,
+        CancellationToken timeoutCtsToken)
     {
-        frame = default;
+        var ackPayload = new AckPayload(messageType);
+        Span<byte> ackBuffer = context.Writer.GetSpan(ackPayload.FixedSize + 4);
 
-        // need at least 3 bytes to read the Header (Start, Type, Length)
-        if (buffer.Length < 15) return false;
+        var bytesWritten = packetEncoderParserHelper.EncodePayloadBytesIntoPacket(ref ackBuffer, ackPayload);
 
-        // Peek at the Start Byte
-        if (buffer.FirstSpan[0] != (byte)MessageType.StartByte)
-        {
-            buffer = buffer.Slice(1); // Syncing: Skip 1 byte and try again
-            return false;
-        }
-
-        // Read the Length from the 3rd byte (Index 2)
-        //int payloadLength = buffer.Slice(2, 1).FirstSpan[0];
-
-        // Total size = Header (3 bytes) + Payload + EndByte (1 byte)
-        //int totalMessageSize = 3 + payloadLength + 1; 
-
-        // Do we have the full message yet?
-        //if (buffer.Length < totalMessageSize) return false;
-
-        int totalMessageSize = 15;
-        // Validate the End Byte at the dynamic position
-        if (buffer.Slice(totalMessageSize - 1, 1).FirstSpan[0] != (byte)MessageType.EndByte)
-        {
-            // If the end byte isn't where it's supposed to be, the stream is corrupted.
-            // We skip the start byte to try and find the next valid frame.
-            buffer = buffer.Slice(1);
-            return false;
-        }
-
-        // SUCCESS: Slice the exact dynamic size
-        frame = buffer.Slice(0, totalMessageSize);
-        buffer = buffer.Slice(totalMessageSize);
-        return true;
+        context.Writer.Advance(bytesWritten);
+        await context.Writer.FlushAsync(timeoutCtsToken);
+        logger.LogHex(new ReadOnlySequence<byte>(context.Writer.GetMemory()[..bytesWritten]),
+            $"[{context.DeviceBarcode}] Rx:");
     }
 }

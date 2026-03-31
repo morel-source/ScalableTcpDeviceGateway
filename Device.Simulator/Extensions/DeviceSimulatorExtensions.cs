@@ -2,11 +2,16 @@ using Device.Simulator.Configuration;
 using Device.Simulator.Messaging;
 using Device.Simulator.Services;
 using Gateway.Monitoring;
+using Gateway.Protocol.Enums;
+using Gateway.Protocol.MessageDecoding;
+using Gateway.Protocol.MessageDecoding.Decoders.Frame;
 using Gateway.Protocol.MessageDecoding.Decoders.Messages;
-using Gateway.Protocol.MessageEncoding.Base.Interfaces;
+using Gateway.Protocol.MessageDecoding.Interfaces;
+using Gateway.Protocol.MessageEncoding;
 using Gateway.Protocol.MessageEncoding.Encoders.Fields;
+using Gateway.Protocol.MessageEncoding.Encoders.Frame;
 using Gateway.Protocol.MessageEncoding.Encoders.Messages;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.MessageEncoding.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -38,15 +43,29 @@ public static class DeviceSimulatorExtensions
 
         private void AddProtocolEncoders()
         {
-            builder.Services.AddSingleton<IMessageEncoder<LoginPayload>, LoginMessageEncoderParser>();
-            builder.Services.AddSingleton<IMessageEncoder<HeartbeatPayload>, HeartBeatMessageEncoderParser>();
+            builder.Services.AddKeyedSingleton<IMessageEncoder, LoginMessageEncoderParser>(MessageType.Login);
+            builder.Services.AddKeyedSingleton<IMessageEncoder, HeartBeatMessageEncoderParser>(MessageType.Heartbeat);
+
             builder.Services.AddSingleton<BarcodeEncoderParser>();
             builder.Services.AddSingleton<TimestampEncoderParser>();
+
+            builder.Services.AddSingleton<HeaderEncoderParser>();
+            builder.Services.AddSingleton<MessageTypeEncoderParser>();
+            builder.Services.AddSingleton<LengthEncoderParser>();
+            builder.Services.AddSingleton<FooterEncoderParser>();
+
+            builder.Services.AddSingleton<IPacketEncoderParserHelper, PacketEncoderParserHelper>();
         }
 
         private void AddProtocolDecoders()
         {
-            builder.Services.AddSingleton<AckMessageDecoderParser>();
+            builder.Services.AddKeyedSingleton<IMessageDecoder, AckMessageDecoderParser>(MessageType.Ack);
+            builder.Services.AddSingleton<HeaderDecoderParser>();
+            builder.Services.AddSingleton<MessageTypeDecoderParser>();
+            builder.Services.AddSingleton<LengthDecoderParser>();
+            builder.Services.AddSingleton<FooterDecoderParser>();
+
+            builder.Services.AddSingleton<IPacketDecoderParserHelper, PacketDecoderParserHelper>();
         }
 
         private void AddSerilog()

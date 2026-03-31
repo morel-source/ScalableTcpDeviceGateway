@@ -1,5 +1,7 @@
 using Device.Simulator.Configuration;
 using Device.Simulator.Networking;
+using Gateway.Protocol.Enums;
+using Gateway.Protocol.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,10 +15,11 @@ public class TcpMessageSender(
     public async Task<bool> SendWithRetryAsync(
         int position,
         DeviceConnectionContext context,
-        string messageName,
+        MessageType messageType,
         CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("[{device}] [{type}] Send", context.DeviceBarcode, messageName);
+        logger.LogInformation(message: "[{DeviceBarcode}] [{MessageType}] Send", context.DeviceBarcode,
+            messageType.GetName());
 
         context.Writer.Advance(position);
         await context.Writer.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -24,9 +27,11 @@ public class TcpMessageSender(
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(options.Value.AckTimeout);
 
-        if (await context.WaitForAckAsync(timeout.Token).ConfigureAwait(false))
+        var ackMessage = await context.AckMessageChanel.WaitForAckAsync(timeout.Token).ConfigureAwait(false);
+        if (ackMessage.Received && ackMessage.MessageType == messageType)
         {
-            logger.LogInformation("[{device}] [{type}] ACK Received", context.DeviceBarcode, messageName);
+            logger.LogInformation(message: "[{DeviceBarcode}] [{MessageType}] ACK Received", context.DeviceBarcode,
+                messageType.GetName());
             return true;
         }
 

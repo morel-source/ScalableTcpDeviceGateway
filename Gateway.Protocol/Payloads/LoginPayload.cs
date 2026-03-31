@@ -1,14 +1,12 @@
+using Gateway.Protocol.Enums;
+
 namespace Gateway.Protocol.Payloads;
 
 public readonly record struct LoginPayload(
     BarcodePayload DeviceBarcode,
     TimestampPayload Timestamp
-) : IPayload
+) : IMessagePayload
 {
-    public static int FixedSize =>
-        1 + // startByte
-        1 + // messageTypeByte
-        BarcodePayload.FixedSize +
-        TimestampPayload.FixedSize +
-        1; // endByte
+    public int FixedSize => DeviceBarcode.FixedSize + Timestamp.FixedSize;
+    public MessageType MessageType => MessageType.Login;
 }

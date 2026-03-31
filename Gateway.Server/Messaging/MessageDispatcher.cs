@@ -1,16 +1,15 @@
-using System.Buffers;
 using Gateway.Protocol.Enums;
-using Gateway.Protocol.MessageDecoding.Base.Interfaces;
+using Gateway.Protocol.MessageDecoding.Interfaces;
 using Gateway.Server.Connections;
 using Gateway.Server.Handlers.Base;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Gateway.Server.Messaging;
 
 public class MessageDispatcher(
     ILogger<MessageDispatcher> logger,
-    IDictionary<MessageType, IHandler> handlers,
-    IDictionary<MessageType, IMessageDecoder> parsers
+    IServiceProvider serviceProvider
 ) : IMessageDispatcher
 {
     public async Task StartProcessingAsync(DeviceConnectionContext context,
@@ -20,52 +19,24 @@ public class MessageDispatcher(
         {
             await foreach (var msg in context.DeviceChannel.Reader.ReadAllAsync(cancellationToken))
             {
-                // No more 'using' block needed here
-                var sequence = new ReadOnlySequence<byte>(msg.Data);
+                if (msg.Data.IsEmpty || msg.MessageType == MessageType.Unknown)
+                    continue;
 
-                if (IsValidFrame(sequence, out var messageType))
-                {
-                    if (parsers.TryGetValue(messageType, out var parser))
-                    {
-                        var reader = new SequenceReader<byte>(sequence);
-                        var payload = parser.Decode(ref reader);
-
-                        if (handlers.TryGetValue(messageType, out var handler))
-                        {
-                            await handler.TryProcessMessage(msg.Context, payload, cancellationToken);
-                        }
-                    }
-                }
+                var decoder = serviceProvider.GetRequiredKeyedService<IMessageDecoder>(msg.MessageType);
+                var payload = decoder.Decode(msg.Data);
+                var handler = serviceProvider.GetRequiredKeyedService<IMessageHandler>(msg.MessageType);
+                await handler.TryProcessMessage(context, payload, cancellationToken);
             }
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("Processing loop stopped for device {device} (Connection closed or timed out).",
-                context.DeviceBarcode ?? "Unknown");
+            logger.LogInformation(
+                message: "Processing loop stopped for device {DeviceBarcode} (Connection closed or timed out).",
+                context.DeviceBarcode);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error processing for {device}", context.DeviceBarcode ?? "Unknown");
+            logger.LogError(ex, message: "Error processing for {DeviceBarcode}", context.DeviceBarcode);
         }
-    }
-
-    private bool IsValidFrame(ReadOnlySequence<byte> buffer, out MessageType messageType)
-    {
-        messageType = MessageType.Unknown;
-
-        // Check start (First byte) 
-        byte startByte = buffer.FirstSpan[0];
-
-        // Check type (Index 1)
-        byte typeByte = buffer.Slice(start: 1, length: 1).FirstSpan[0];
-        if (Enum.IsDefined(typeof(MessageType), typeByte))
-        {
-            messageType = (MessageType)typeByte;
-        }
-
-        // Check end (Last byte)
-        byte endByte = buffer.Slice(buffer.Length - 1).FirstSpan[0];
-
-        return startByte == (byte)MessageType.StartByte && endByte == (byte)MessageType.EndByte;
     }
 }

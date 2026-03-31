@@ -1,6 +1,13 @@
+using Gateway.Protocol.Enums;
+
 namespace Gateway.Protocol.Payloads;
 
 public interface IPayload
 {
-    static abstract int FixedSize { get; }
+    int FixedSize { get; }
+}
+
+public interface IMessagePayload : IPayload
+{
+    MessageType MessageType { get; }
 }

@@ -22,12 +22,13 @@ public class PrometheusMetricServerHostedService(
         try
         {
             _server.Start();
-            logger.LogInformation("Prometheus metrics server started on port {Port}",
+            logger.LogInformation(message: "Prometheus metrics server started on port {KestrelMetricServerPort}",
                 options.Value.KestrelMetricServerPort);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Could not start Metrics Server. Check if port {Port} is in use.",
+            logger.LogError(ex,
+                message: "Could not start Metrics Server. Check if port {KestrelMetricServerPort} is in use.",
                 options.Value.KestrelMetricServerPort);
         }
 
@@ -40,7 +41,7 @@ public class PrometheusMetricServerHostedService(
 
         try
         {
-            logger.LogInformation("Stopping Prometheus metrics server...");
+            logger.LogInformation(message: "Stopping Prometheus metrics server...");
             await _server.StopAsync().ConfigureAwait(false);
         }
         catch (Exception ex)

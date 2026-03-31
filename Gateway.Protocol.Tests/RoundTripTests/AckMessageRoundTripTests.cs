@@ -1,3 +1,4 @@
+using Gateway.Protocol.Enums;
 using Gateway.Protocol.MessageDecoding.Decoders.Messages;
 using Gateway.Protocol.MessageEncoding.Encoders.Messages;
 using Gateway.Protocol.Payloads;
@@ -8,5 +9,5 @@ namespace Gateway.Protocol.Tests.RoundTripTests;
 public class AckMessageRoundTripTests :
     RoundTripTestBase<AckMessageEncoderParser, AckMessageDecoderParser, AckPayload>
 {
-    protected override AckPayload SamplePayload => new();
+    protected override AckPayload SamplePayload => new(MessageType.Login);
 }
