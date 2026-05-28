@@ -1,12 +1,16 @@
 using System.Collections.Concurrent;
 using Gateway.Monitoring.Services;
+using Gateway.Protocol.Enums;
+using Kafka.Contracts.Events;
+using Kafka.Producer;
 using Microsoft.Extensions.Logging;
 
 namespace Gateway.Server.Connections;
 
 public sealed class DeviceConnectionManager(
     ILogger<DeviceConnectionManager> logger,
-    IMetricsService metrics)
+    IMetricsService metrics,
+    TelemetryKafkaProducer kafkaProducer)
 {
     private readonly ConcurrentDictionary<Guid, DeviceConnectionContext> _connections = new();
 
@@ -20,23 +24,21 @@ public sealed class DeviceConnectionManager(
         return id;
     }
 
+
     public async Task RemoveAsync(Guid id)
     {
         if (_connections.TryRemove(id, out var context))
         {
             try
             {
-                // Stop sending more data
                 context.DeviceChannel.Writer.TryComplete();
 
-                // Complete pipelines safely
                 try
                 {
                     await context.Writer.CompleteAsync();
                 }
                 catch (Exception ex) when (ex is IOException or ObjectDisposedException)
                 {
-                    logger.LogDebug(message: "Writer completion failed (expected): {Message}", ex.Message);
                 }
 
                 try
@@ -45,19 +47,24 @@ public sealed class DeviceConnectionManager(
                 }
                 catch (Exception ex) when (ex is IOException or ObjectDisposedException)
                 {
-                    logger.LogDebug(message: "Reader completion failed (expected on disconnect): {Message}",
-                        ex.Message);
                 }
 
-                // Final cleanup
                 context.TcpClient.Dispose();
 
-                logger.LogInformation(message: "Cleanup [{DeviceBarcode}] {RemoteEndPoint}", context.DeviceBarcode,
-                    context.RemoteEndPoint);
+                logger.LogInformation("Cleanup [{DeviceBarcode}] {RemoteEndPoint}",
+                    context.DeviceBarcode, context.RemoteEndPoint);
+
+                await kafkaProducer.PublishDeviceStatusAsync(new DeviceStatusEvent
+                {
+                    DeviceId = context.DeviceBarcode,
+                    Status = DeviceStatusType.Disconnected,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    DisconnectReason = "connection closed"
+                });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, message: "Unexpected cleanup error");
+                logger.LogError(ex, "Unexpected cleanup error");
             }
             finally
             {
@@ -66,7 +73,6 @@ public sealed class DeviceConnectionManager(
             }
         }
     }
-
 
     public async Task CloseConnections()
     {

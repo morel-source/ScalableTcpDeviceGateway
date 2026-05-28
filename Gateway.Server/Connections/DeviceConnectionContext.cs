@@ -12,12 +12,12 @@ public class DeviceConnectionContext
     public required PipeReader Reader { get; init; }
     public required PipeWriter Writer { get; init; }
 
-    public string? DeviceBarcode
+    public string DeviceBarcode
     {
         get => string.IsNullOrWhiteSpace(field) ? "Unknown" : field;
         set;
     }
-    
+
     public Channel<IncomingMessage> DeviceChannel { get; } =
         Channel.CreateBounded<IncomingMessage>(new BoundedChannelOptions(capacity: 100)
         {

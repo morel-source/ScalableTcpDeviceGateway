@@ -1,6 +1,7 @@
 using Gateway.Protocol.MessageDecoding.Decoders.Fields;
 using Gateway.Protocol.MessageDecoding.Decoders.Messages;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Fields;
+using Gateway.Protocol.Payloads.Messages;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Gateway.Protocol.Tests.DecodingTests.SuccessTests.Base;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Gateway.Protocol.Tests.DecodingTests.SuccessTests.MessagesTests;
 
 public class HeartBeatMessageDecoderParserTests :
-    MessageDecoderTestBase<HeartBeatMessageDecoderParserTests, HeartBeatMessageDecoderParser, HeartbeatPayload>,
+    MessageDecoderTestBase<HeartBeatMessageDecoderParserTests, HeartBeatMessageDecoderParser, HeartbeatMessagePayload>,
     ITestData<MessageDecoderTestBase<HeartBeatMessageDecoderParserTests, HeartBeatMessageDecoderParser,
-        HeartbeatPayload>.TestCase>
+        HeartbeatMessagePayload>.TestCase>
 {
     protected override void AddDependencies(IServiceCollection services)
     {
@@ -23,9 +24,9 @@ public class HeartBeatMessageDecoderParserTests :
     [
         new(
             TestName: "HeartBeat Test",
-            Input: [0x01, 0x12, 0x0C, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x1A, 0x03, 0x1D, 0x17, 0x30, 0x35, 0x35],
-            ExpectedResult: new HeartbeatPayload(
+            Input: [0x02, 0x02, 0x0C, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x1A, 0x05, 0x1C, 0x09, 0x24, 0x18, 0x03],
+            ExpectedResult: new HeartbeatMessagePayload(
                 new BarcodePayload("000001"),
-                new TimestampPayload(new DateTime(year: 2026, month: 03, day: 29, hour: 23, minute: 48, second: 53))))
+                new TimestampPayload(new DateTime(year: 2026, month: 05, day: 28, hour: 09, minute: 36, second: 24))))
     ];
 }

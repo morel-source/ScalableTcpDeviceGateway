@@ -11,5 +11,9 @@ public interface IMetricsService
     void IncrementDisconnectConnections();
     IDisposable MeasureLoginProcess();
     IDisposable MeasureHeartBeatProcess();
-    IDisposable TrackConnection();
+    void IncrementTelemetryCount();
+    void IncrementAlertCount();
+    void IncrementDeadLetterCount();
+    IDisposable MeasureTelemetryProcess();
+    void RecordTemperature(string deviceId, double celsius);
 }

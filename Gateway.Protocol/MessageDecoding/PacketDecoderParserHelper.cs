@@ -12,7 +12,7 @@ public sealed class PacketDecoderParserHelper(
     FooterDecoderParser footerDecoderParser
 ) : IPacketDecoderParserHelper
 {
-    public bool GetPayloadBytesFromPacket(
+    public bool TryGetPayloadBytesFromPacket(
         ref ReadOnlySequence<byte> sequence,
         out ReadOnlySequence<byte> body,
         out MessageType messageType)

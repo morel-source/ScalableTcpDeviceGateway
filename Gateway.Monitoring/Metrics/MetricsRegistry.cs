@@ -66,4 +66,56 @@ public static class MetricsRegistry
                 Buckets = [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
             }
         );
+
+    public static readonly Counter TotalTelemetryMessages =
+        Prometheus.Metrics.CreateCounter(
+            name: "gateway_telemetry_total",
+            help: "Total telemetry packets processed",
+            new CounterConfiguration
+            {
+                LabelNames = ["instance_id"]
+            }
+        );
+
+    public static readonly Counter TotalAlertMessages =
+        Prometheus.Metrics.CreateCounter(
+            name: "gateway_alerts_total",
+            help: "Total device alert packets received",
+            new CounterConfiguration
+            {
+                LabelNames = ["instance_id"]
+            }
+        );
+
+    public static readonly Counter TotalDeadLetterMessages =
+        Prometheus.Metrics.CreateCounter(
+            name: "gateway_deadletter_total",
+            help: "Total packets routed to dead letter",
+            new CounterConfiguration
+            {
+                LabelNames = ["instance_id"]
+            }
+        );
+
+
+    public static readonly Histogram TelemetryProcessingDuration =
+        Prometheus.Metrics.CreateHistogram(
+            name: "gateway_telemetry_duration_seconds",
+            help: "Histogram of telemetry processing latency",
+            new HistogramConfiguration
+            {
+                LabelNames = ["instance_id"],
+                Buckets = [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+            }
+        );
+
+    public static readonly Gauge TemperatureByDevice =
+        Prometheus.Metrics.CreateGauge(
+            name: "gateway_device_temperature_celsius",
+            help: "Last reported temperature per device",
+            new GaugeConfiguration
+            {
+                LabelNames = ["device_id", "instance_id"]
+            }
+        );
 }

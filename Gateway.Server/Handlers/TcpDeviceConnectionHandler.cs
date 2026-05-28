@@ -1,14 +1,16 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using Gateway.Monitoring.Services;
 using Gateway.Protocol.Enums;
 using Gateway.Protocol.Extensions;
 using Gateway.Protocol.MessageDecoding.Interfaces;
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Messages;
 using Gateway.Server.Configuration;
 using Gateway.Server.Connections;
 using Gateway.Server.Messaging;
+using Kafka.Producer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,7 +22,9 @@ public class TcpDeviceConnectionHandler(
     IOptions<DeviceConnectionOptions> deviceConnectionOptions,
     IMessageDispatcher messageDispatcher,
     IPacketDecoderParserHelper packetDecoderParserHelper,
-    IPacketEncoderParserHelper packetEncoderParserHelper
+    IPacketEncoderParserHelper packetEncoderParserHelper,
+    IMetricsService metrics,
+    TelemetryKafkaProducer kafkaProducer
 ) : IDeviceConnectionAcceptor
 {
     public async Task AcceptClient(TcpClient client, CancellationToken cancellationToken = default)
@@ -46,6 +50,14 @@ public class TcpDeviceConnectionHandler(
         try
         {
             timeoutCts.CancelAfter(deviceConnectionOptions.Value.LoginTimeout);
+
+            if (!await AuthenticateHandshakeAsync(context, timeoutCts.Token))
+            {
+                logger.LogWarning("Unauthorized connection attempt from {RemoteEndPoint}", context.RemoteEndPoint);
+                return; // Drop the connection immediately
+            }
+
+            timeoutCts.CancelAfter(deviceConnectionOptions.Value.HeartbeatTimeout);
 
             var processingTask = messageDispatcher.StartProcessingAsync(context, timeoutCts.Token);
 
@@ -98,6 +110,45 @@ public class TcpDeviceConnectionHandler(
         }
     }
 
+    private async Task<bool> AuthenticateHandshakeAsync(DeviceConnectionContext context,
+        CancellationToken cancellationToken)
+    {
+        var result = await context.Reader.ReadAsync(cancellationToken);
+        var buffer = result.Buffer;
+
+        if (!buffer.IsEmpty)
+            logger.LogHex(buffer, $"[{context.DeviceBarcode}] Tx:");
+
+        var originalStart = buffer.Start;
+
+        try
+        {
+            if (packetDecoderParserHelper.TryGetPayloadBytesFromPacket(
+                    ref buffer, out var body, out var messageType))
+            {
+                if (messageType == MessageType.Login)
+                {
+                    var data = new ReadOnlySequence<byte>(body.ToArray());
+                    var msg = new IncomingMessage(context, Data: data, messageType);
+
+                    if (context.DeviceChannel.Writer.TryWrite(msg))
+                        await SendAck(context, messageType, cancellationToken);
+
+                    context.Reader.AdvanceTo(buffer.Start, buffer.End);
+
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during JWT handshake");
+        }
+
+        context.Reader.AdvanceTo(originalStart, buffer.End);
+        return false;
+    }
+
     private async Task ReadLoop(DeviceConnectionContext context, CancellationTokenSource timeoutCts)
     {
         while (!timeoutCts.IsCancellationRequested)
@@ -113,8 +164,11 @@ public class TcpDeviceConnectionHandler(
 
             try
             {
-                while (packetDecoderParserHelper.GetPayloadBytesFromPacket(ref buffer, out var body,
-                           out var messageType))
+                // snapshot the buffer before parsing so we can capture raw bytes on failure
+                var rawBuffer = buffer;
+
+                while (packetDecoderParserHelper.TryGetPayloadBytesFromPacket(
+                           ref buffer, out var body, out var messageType))
                 {
                     timeoutCts.CancelAfter(deviceConnectionOptions.Value.HeartbeatTimeout);
 
@@ -122,9 +176,26 @@ public class TcpDeviceConnectionHandler(
                     var msg = new IncomingMessage(context, Data: data, messageType);
 
                     if (context.DeviceChannel.Writer.TryWrite(msg))
-                    {
                         await SendAck(context, messageType, timeoutCts.Token);
-                    }
+                }
+
+                // if bytes remain unconsumed after the parse loop, the packet was bad
+                // publish to dead letter so it is never silently lost
+                if (!buffer.IsEmpty && rawBuffer.Length != buffer.Length)
+                {
+                    var badBytes = buffer.ToArray();
+                    logger.LogWarning("[{DeviceBarcode}] Unparseable packet ({Bytes} bytes) → dead letter",
+                        context.DeviceBarcode, badBytes.Length);
+
+                    metrics.IncrementDeadLetterCount();
+
+                    await kafkaProducer.PublishDeadLetterAsync(
+                        deviceId: context.DeviceBarcode,
+                        Convert.ToHexString(badBytes),
+                        timeoutCts.Token);
+
+                    // advance past the bad bytes so the loop doesn't re-process them
+                    buffer = buffer.Slice(buffer.End);
                 }
 
                 consumed = buffer.Start;
@@ -141,7 +212,7 @@ public class TcpDeviceConnectionHandler(
     private async Task SendAck(DeviceConnectionContext context, MessageType messageType,
         CancellationToken timeoutCtsToken)
     {
-        var ackPayload = new AckPayload(messageType);
+        var ackPayload = new AckMessagePayload(messageType);
         Span<byte> ackBuffer = context.Writer.GetSpan(ackPayload.FixedSize + 4);
 
         var bytesWritten = packetEncoderParserHelper.EncodePayloadBytesIntoPacket(ref ackBuffer, ackPayload);

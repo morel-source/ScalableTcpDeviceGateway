@@ -1,5 +1,6 @@
 using Device.Simulator.Configuration;
 using Device.Simulator.Messaging;
+using Device.Simulator.Messaging.Messages;
 using Device.Simulator.Services;
 using Gateway.Monitoring;
 using Gateway.Protocol.Enums;
@@ -12,11 +13,11 @@ using Gateway.Protocol.MessageEncoding.Encoders.Fields;
 using Gateway.Protocol.MessageEncoding.Encoders.Frame;
 using Gateway.Protocol.MessageEncoding.Encoders.Messages;
 using Gateway.Protocol.MessageEncoding.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Sinks.Grafana.Loki;
+using Shared.Logging;
+
 
 namespace Device.Simulator.Extensions;
 
@@ -26,28 +27,47 @@ public static class DeviceSimulatorExtensions
     {
         public void AddDeviceSimulator()
         {
-            builder.AddSerilog();
+            builder.AddLogging(serviceName: "TcpDeviceSimulator");
+
+            builder.Configuration.SetBasePath(Directory.GetCurrentDirectory());
+            builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
             builder.Services.Configure<SimulatorOptions>(
                 builder.Configuration.GetSection("SimulatorOptions"));
-
+            
             builder.Services.AddHostedService<DeviceSimulatorService>();
-
             builder.Services.AddSingleton<IMessageSender, TcpMessageSender>();
             builder.Services.AddSingleton<IMessageHandler, MessageHandler>();
 
             builder.UseMonitoring();
             builder.AddProtocolEncoders();
             builder.AddProtocolDecoders();
+            builder.AddMessageHandlers();
+        }
+
+        private void AddMessageHandlers()
+        {
+            builder.Services.AddSingleton<LoginMessageHandler>();
+            builder.Services.AddSingleton<HeartbeatMessageHandler>();
+            builder.Services.AddSingleton<AlertMessageHandler>();
+            builder.Services.AddSingleton<TelemetryMessageHandler>();
+            builder.Services.AddSingleton<AckMessageHandler>();
         }
 
         private void AddProtocolEncoders()
         {
             builder.Services.AddKeyedSingleton<IMessageEncoder, LoginMessageEncoderParser>(MessageType.Login);
             builder.Services.AddKeyedSingleton<IMessageEncoder, HeartBeatMessageEncoderParser>(MessageType.Heartbeat);
+            builder.Services.AddKeyedSingleton<IMessageEncoder, TelemetryMessageEncoderParser>(MessageType.Telemetry);
+            builder.Services.AddKeyedSingleton<IMessageEncoder, AlertMessageEncoderParser>(MessageType.Alert);
 
             builder.Services.AddSingleton<BarcodeEncoderParser>();
             builder.Services.AddSingleton<TimestampEncoderParser>();
+
+            builder.Services.AddSingleton<TemperatureEncoderParser>();
+            builder.Services.AddSingleton<BatteryEncoderParser>();
+            builder.Services.AddSingleton<SignalEncoderParser>();
+            builder.Services.AddSingleton<AlertTypeEncoderParser>();
 
             builder.Services.AddSingleton<HeaderEncoderParser>();
             builder.Services.AddSingleton<MessageTypeEncoderParser>();
@@ -60,34 +80,13 @@ public static class DeviceSimulatorExtensions
         private void AddProtocolDecoders()
         {
             builder.Services.AddKeyedSingleton<IMessageDecoder, AckMessageDecoderParser>(MessageType.Ack);
+
             builder.Services.AddSingleton<HeaderDecoderParser>();
             builder.Services.AddSingleton<MessageTypeDecoderParser>();
             builder.Services.AddSingleton<LengthDecoderParser>();
             builder.Services.AddSingleton<FooterDecoderParser>();
 
             builder.Services.AddSingleton<IPacketDecoderParserHelper, PacketDecoderParserHelper>();
-        }
-
-        private void AddSerilog()
-        {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .Enrich.FromLogContext()
-                .WriteTo.Console(
-                    outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-                ).WriteTo.GrafanaLoki(
-                    uri: builder.Configuration["LokiOptions:Url"] ?? "http://localhost:3100",
-                    labels:
-                    [
-                        new LokiLabel { Key = "Application", Value = "TcpDeviceSimulator" }
-                    ],
-                    propertiesAsLabels: ["level"],
-                    textFormatter: new Serilog.Formatting.Display.MessageTemplateTextFormatter(
-                        "{Message:lj}{NewLine}{Exception}"))
-                .CreateLogger();
-
-            builder.Logging.ClearProviders();
-            builder.Services.AddSerilog();
         }
     }
 }

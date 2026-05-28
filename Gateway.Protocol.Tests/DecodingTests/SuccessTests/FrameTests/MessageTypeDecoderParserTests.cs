@@ -13,17 +13,27 @@ public class MessageTypeDecoderParserTests :
     [
         new(
             TestName: "Login MessageByte Test",
-            Input: [0x11],
+            Input: [0x01],
             ExpectedResult: MessageType.Login),
 
         new(
             TestName: "Heartbeat MessageByte Test",
-            Input: [0x12],
+            Input: [0x02],
             ExpectedResult: MessageType.Heartbeat),
 
         new(
             TestName: "Ack MessageByte Test",
-            Input: [0x22],
-            ExpectedResult: MessageType.Ack)
+            Input: [0x03],
+            ExpectedResult: MessageType.Ack),
+
+        new(
+            TestName: "Telemetry MessageByte Test",
+            Input: [0x04],
+            ExpectedResult: MessageType.Telemetry),
+
+        new(
+            TestName: "Alert MessageByte Test",
+            Input: [0x05],
+            ExpectedResult: MessageType.Alert)
     ];
 }
