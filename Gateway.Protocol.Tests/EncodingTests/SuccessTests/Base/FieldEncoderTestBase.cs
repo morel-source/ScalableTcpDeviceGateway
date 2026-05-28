@@ -1,5 +1,5 @@
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -22,7 +22,7 @@ public abstract class FieldEncoderTestBase<TTest, TEncoder, TPayload>
     public void Encoder_ShouldEncodeCorrectly(TestCase testCase)
     {
         var services = new ServiceCollection();
-        AddDependencies(services);
+        services.AddSingleton<TEncoder>();
 
         var serviceProvider = services.BuildServiceProvider();
         var encoder = serviceProvider.GetRequiredService<TEncoder>();
@@ -35,6 +35,4 @@ public abstract class FieldEncoderTestBase<TTest, TEncoder, TPayload>
         AssertHelper.Equal(testCase.ExpectedBuffer, buffer.ToArray());
         Assert.Equal(testCase.Input.FixedSize, position);
     }
-
-    protected abstract void AddDependencies(IServiceCollection services);
 }

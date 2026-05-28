@@ -1,5 +1,5 @@
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Fields;
 
 namespace Gateway.Protocol.MessageEncoding.Encoders.Fields;
 

@@ -1,4 +1,4 @@
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 
 namespace Gateway.Protocol.MessageEncoding.Interfaces;
 

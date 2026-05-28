@@ -5,10 +5,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="11.0.0-preview.1.26104.118" />
+        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.17.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="8.0.0-nblumhardt-02322" />
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
@@ -17,12 +20,20 @@
     <ItemGroup>
         <ProjectReference Include="..\Gateway.Monitoring\Gateway.Monitoring.csproj" />
         <ProjectReference Include="..\Gateway.Protocol\Gateway.Protocol.csproj" />
+        <ProjectReference Include="..\Kafka.Producer\Kafka.Producer.csproj" />
+        <ProjectReference Include="..\Shared.Logging\Shared.Logging.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <None Update="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
 </Project>

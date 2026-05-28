@@ -2,7 +2,8 @@ using Gateway.Protocol.Enums;
 using Gateway.Protocol.MessageEncoding.Encoders.Fields;
 using Gateway.Protocol.MessageEncoding.Encoders.Messages;
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Fields;
+using Gateway.Protocol.Payloads.Messages;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Gateway.Protocol.Tests.EncodingTests.SuccessTests.Base;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,8 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Gateway.Protocol.Tests.EncodingTests.SuccessTests.MessagesTests;
 
 public class LoginMessageEncoderParserTests :
-    MessageEncoderTestBase<LoginMessageEncoderParserTests, LoginMessageEncoderParser, LoginPayload>,
-    ITestData<MessageEncoderTestBase<LoginMessageEncoderParserTests, LoginMessageEncoderParser, LoginPayload>.TestCase>
+    MessageEncoderTestBase<LoginMessageEncoderParserTests, LoginMessageEncoderParser, LoginMessagePayload>,
+    ITestData<MessageEncoderTestBase<LoginMessageEncoderParserTests, LoginMessageEncoderParser, LoginMessagePayload>.
+        TestCase>
 {
     protected override void AddDependencies(IServiceCollection services)
     {
@@ -25,9 +27,15 @@ public class LoginMessageEncoderParserTests :
     [
         new(
             TestName: "Login Test",
-            Input: new LoginPayload(
+            ExpectedBuffer:
+            [
+                0x02, 0x01, 0x0C, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x1A, 0x05, 0x1B, 0x0B, 0x15, 0x2B, 0x03
+            ],
+            Input: new LoginMessagePayload(
                 new BarcodePayload("000001"),
-                new TimestampPayload(new DateTime(year: 2026, month: 03, day: 29, hour: 18, minute: 11, second: 27))),
-            ExpectedBuffer: [0x01, 0x11, 0x0C, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x1A, 0x03, 0x1D, 0x12, 0x0B, 0x1B, 0x35])
+                new TimestampPayload(
+                    new DateTime(year: 2026, month: 05, day: 27, hour: 11, minute: 21, second: 43
+                    ))
+            ))
     ];
 }

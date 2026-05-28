@@ -8,5 +8,7 @@ public interface IMessageHandler
 {
     Task<bool> SendLoginAsync(DeviceConnectionContext context, CancellationToken cancellationToken = default);
     Task SendHeartbeatLoopAsync(DeviceConnectionContext context, CancellationToken cancellationToken = default);
+    Task SendTelemetryLoopAsync(DeviceConnectionContext context, CancellationToken cancellationToken = default);
+    Task SendAlertAsync(DeviceConnectionContext context, AlertType alertType, CancellationToken cancellationToken = default);
     bool TryParseAckFrame(ref ReadOnlySequence<byte> buffer, out MessageType messageType);
 }

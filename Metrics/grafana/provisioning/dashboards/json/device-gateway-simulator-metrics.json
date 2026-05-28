@@ -41,7 +41,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 5,
         "x": 0,
         "y": 0
       },
@@ -66,9 +66,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
           "expr": "gateway_devices_expected_total{job=\"simulator-app\"}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -100,8 +98,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 4,
+        "w": 4,
+        "x": 5,
         "y": 0
       },
       "id": 2,
@@ -125,9 +123,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
           "expr": "gateway_active_connections{job=\"gateway-app\"}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -156,7 +152,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
+        "w": 4,
         "x": 9,
         "y": 0
       },
@@ -181,9 +177,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
-          "expr": "gateway_logins_total{job=\"gateway-app\"}",
-          "range": true,
+          "expr": "sum(gateway_logins_total{job=\"gateway-app\"})",
           "refId": "A"
         }
       ],
@@ -215,8 +209,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 14,
+        "w": 3,
+        "x": 13,
         "y": 0
       },
       "id": 4,
@@ -240,9 +234,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
-          "expr": "gateway_heartbeats_total{job=\"gateway-app\"}",
-          "range": true,
+          "expr": "sum(gateway_heartbeats_total{job=\"gateway-app\"})",
           "refId": "A"
         }
       ],
@@ -274,8 +266,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 19,
+        "w": 4,
+        "x": 16,
         "y": 0
       },
       "id": 5,
@@ -299,9 +291,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
-          "expr": "gateway_disconnects_total{job=\"gateway-app\"}",
-          "range": true,
+          "expr": "sum(gateway_disconnects_total{job=\"gateway-app\"})",
           "refId": "A"
         }
       ],
@@ -316,44 +306,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
-          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -362,96 +317,47 @@
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 5
+                "color": "dark-red",
+                "value": 1
               }
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Connection Delta"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 4
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Simulator connections"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Gateway connections"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "purple",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 10,
-        "x": 0,
-        "y": 4
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
       },
-      "id": 23,
+      "id": 8,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
-          "expr": "gateway_active_connections{job=\"gateway-app\"}",
-          "legendFormat": "Gateway connections",
-          "range": true,
+          "expr": "sum(gateway_deadletter_total{job=\"gateway-app\"})",
           "refId": "A"
         }
       ],
-      "title": "Active Connections",
-      "type": "timeseries"
+      "title": "Dead Letter Packets",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -518,9 +424,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 7,
-        "x": 10,
+        "x": 0,
         "y": 4
       },
       "id": 10,
@@ -540,7 +446,7 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "code",
+          "editorMode": "builder",
           "expr": "rate(process_cpu_seconds_total[1m]) * 100",
           "legendFormat": "{{job}}",
           "range": true,
@@ -613,12 +519,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 17,
+        "h": 8,
+        "w": 9,
+        "x": 7,
         "y": 4
       },
-      "id": 8,
+      "id": 11,
       "options": {
         "legend": {
           "calcs": [],
@@ -653,109 +559,113 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "fieldMinMax": true,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "p95 Login Latency"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
               }
             ]
           }
-        ]
+        },
+        "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 0,
-        "y": 11
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 4
       },
-      "id": 26,
+      "id": 7,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.95, sum by(le) (rate(gateway_heartbeat_duration_seconds_bucket[5m])))",
-          "legendFormat": "p95 Login Latency",
+          "expr": "sum(gateway_telemetry_total{job=\"gateway-app\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Telemetry Packets",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ds"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "yellow",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(gateway_alerts_total{job=\"gateway-app\"})",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Heartbeat Latency (p95) in Seconds",
-      "type": "timeseries"
+      "title": "Total Alerts Fired",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -776,7 +686,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 15,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -785,7 +695,7 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -811,21 +721,36 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 5
               }
             ]
-          },
-          "unit": "s"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gateway connections"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 6,
-        "y": 11
+        "h": 8,
+        "w": 9,
+        "x": 0,
+        "y": 12
       },
-      "id": 25,
+      "id": 23,
       "options": {
         "legend": {
           "calcs": [],
@@ -835,19 +760,20 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(gateway_login_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "p95 Login Latency",
+          "expr": "gateway_active_connections{job=\"gateway-app\"}",
+          "legendFormat": "Gateway connections",
+          "range": true,
           "refId": "A"
         }
       ],
-      "title": "Login Latency (p95) in Seconds",
+      "title": "Active Connections",
       "type": "timeseries"
     },
     {
@@ -914,7 +840,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "HeartBeats/s"
+              "options": "Heartbeats/s"
             },
             "properties": [
               {
@@ -940,14 +866,59 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Telemetry/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alerts/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DeadLetter/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 11
+        "h": 8,
+        "w": 15,
+        "x": 9,
+        "y": 12
       },
       "id": 12,
       "options": {
@@ -969,35 +940,457 @@
       "pluginVersion": "12.4.1",
       "targets": [
         {
-          "editorMode": "builder",
           "expr": "rate(gateway_logins_total{job=\"gateway-app\"}[1m])",
           "legendFormat": "Logins/s",
           "range": true,
           "refId": "A"
         },
         {
-          "editorMode": "builder",
           "expr": "rate(gateway_heartbeats_total{job=\"gateway-app\"}[1m])",
-          "legendFormat": "HeartBeats/s",
+          "legendFormat": "Heartbeats/s",
           "range": true,
           "refId": "B"
         },
         {
-          "editorMode": "builder",
           "expr": "rate(gateway_disconnects_total{job=\"gateway-app\"}[1m])",
           "legendFormat": "Disconnects/s",
           "range": true,
           "refId": "C"
+        },
+        {
+          "expr": "rate(gateway_telemetry_total{job=\"gateway-app\"}[1m])",
+          "legendFormat": "Telemetry/s",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "expr": "rate(gateway_alerts_total{job=\"gateway-app\"}[1m])",
+          "legendFormat": "Alerts/s",
+          "range": true,
+          "refId": "E"
+        },
+        {
+          "expr": "rate(gateway_deadletter_total{job=\"gateway-app\"}[1m])",
+          "legendFormat": "DeadLetter/s",
+          "range": true,
+          "refId": "F"
         }
       ],
-      "title": "Throughput: Messages / Sec",
+      "title": "Throughput: All Message Types / Sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ds"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_login_duration_seconds_bucket{job=\"gateway-app\"}[5m])) by (le))",
+          "legendFormat": "p95 Login Latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Login Latency (p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ds"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95 Login Latency"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 20
+      },
+      "id": 26,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(gateway_heartbeat_duration_seconds_bucket{job=\"gateway-app\"}[5m])))",
+          "legendFormat": "p95 Heartbeat Latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Heartbeat Latency (p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ds"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 20
+      },
+      "id": 33,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_telemetry_duration_seconds_bucket{job=\"gateway-app\"}[5m])) by (le))",
+          "legendFormat": "p95 Telemetry Latency",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Telemetry Latency (p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-ds"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 34,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "expr": "gateway_device_temperature_celsius{job=\"gateway-app\"}",
+          "legendFormat": "Device {{device_id}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Temperature per Device (°C) — red threshold at 80°C",
       "type": "timeseries"
     }
   ],
   "preload": false,
   "refresh": "auto",
   "schemaVersion": 42,
-  "tags": [],
+  "tags": [
+    "iot",
+    "kafka",
+    "gateway"
+  ],
   "templating": {
     "list": []
   },
@@ -1007,8 +1400,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ScalableTcpDeviceGateway Metrics",
+  "title": "ScalableTcpDeviceGateway — IoT Telemetry Platform",
   "uid": "adx7gk8",
-  "version": 129,
+  "version": 1,
   "weekStart": ""
 }

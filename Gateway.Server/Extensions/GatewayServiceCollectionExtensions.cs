@@ -6,9 +6,7 @@ using Gateway.Server.Messaging;
 using Gateway.Server.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Sinks.Grafana.Loki;
+using Shared.Logging;
 
 namespace Gateway.Server.Extensions;
 
@@ -18,7 +16,7 @@ public static class GatewayServiceCollectionExtensions
     {
         public void AddGatewayServer()
         {
-            builder.AddSerilog();
+            builder.AddLogging(serviceName: "TcpDeviceGateway");
 
             builder.Services.Configure<TcpServerOptions>(
                 builder.Configuration.GetSection("TcpServerOptions"));
@@ -38,28 +36,6 @@ public static class GatewayServiceCollectionExtensions
             builder.AddParsers();
             builder.AddEncoders();
             builder.UseMonitoring();
-        }
-
-        private void AddSerilog()
-        {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .Enrich.FromLogContext()
-                .WriteTo.Console(
-                    outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.GrafanaLoki(
-                    uri: builder.Configuration["LokiOptions:Url"] ?? "http://localhost:3100",
-                    labels:
-                    [
-                        new LokiLabel { Key = "Application", Value = "TcpDeviceGateway" }
-                    ],
-                    propertiesAsLabels: ["level"],
-                    textFormatter: new Serilog.Formatting.Display.MessageTemplateTextFormatter(
-                        "{Message:lj}{NewLine}{Exception}"))
-                .CreateLogger();
-
-            builder.Logging.ClearProviders();
-            builder.Services.AddSerilog();
         }
     }
 }

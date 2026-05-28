@@ -1,7 +1,7 @@
 using Gateway.Protocol.MessageEncoding;
 using Gateway.Protocol.MessageEncoding.Encoders.Frame;
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -24,7 +24,7 @@ public abstract class MessageEncoderTestBase<TTest, TEncoder, TPayload>
     public void Encoder_ShouldEncodeCorrectly(TestCase testCase)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IMessageEncoder,TEncoder>();
+        services.AddSingleton<IMessageEncoder, TEncoder>();
         AddDependencies(services);
 
         var serviceProvider = services.BuildServiceProvider();
@@ -32,7 +32,7 @@ public abstract class MessageEncoderTestBase<TTest, TEncoder, TPayload>
         Span<byte> buffer = stackalloc byte[testCase.Input.FixedSize + 4];
 
         var result = parserHelper.EncodePayloadBytesIntoPacket(ref buffer, testCase.Input);
-        
+
         Assert.Equal(testCase.ExpectedBuffer.Length, result);
         Assert.True(testCase.ExpectedBuffer.AsSpan().SequenceEqual(buffer));
     }

@@ -1,5 +1,5 @@
 using System.Buffers;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 
 namespace Gateway.Protocol.MessageDecoding.Interfaces;
 

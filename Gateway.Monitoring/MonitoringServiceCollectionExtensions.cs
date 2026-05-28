@@ -12,7 +12,7 @@ public static class MonitoringServiceCollectionExtensions
         builder.Services.AddSingleton<IMetricsService, PrometheusMetricsService>();
 
         builder.Services.Configure<PrometheusMonitoringOptions>(
-            builder.Configuration.GetSection("PrometheusMonitoringOptions"));
+            builder.Configuration.GetSection(key: "PrometheusMonitoringOptions"));
 
         builder.Services.AddHostedService<PrometheusMetricServerHostedService>();
     }

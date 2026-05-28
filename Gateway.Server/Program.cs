@@ -1,4 +1,5 @@
 ﻿using Gateway.Server.Extensions;
+using Kafka.Producer;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -9,6 +10,7 @@ try
 {
     var builder = Host.CreateApplicationBuilder(args);
     builder.AddGatewayServer();
+    builder.Services.AddKafkaProducer(builder.Configuration);
     var app = builder.Build();
     await app.RunAsync();
 }
