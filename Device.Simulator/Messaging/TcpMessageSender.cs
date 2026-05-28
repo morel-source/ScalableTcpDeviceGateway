@@ -27,14 +27,13 @@ public class TcpMessageSender(
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(options.Value.AckTimeout);
 
-        var ackMessage = await context.AckMessageChanel.WaitForAckAsync(timeout.Token).ConfigureAwait(false);
-        if (ackMessage.Received && ackMessage.MessageType == messageType)
-        {
-            logger.LogInformation(message: "[{DeviceBarcode}] [{MessageType}] ACK Received", context.DeviceBarcode,
-                messageType.GetName());
-            return true;
-        }
+        var ackMessage = await context.AckMessageChanel.WaitForAckAsync(messageType, timeout.Token)
+            .ConfigureAwait(false);
 
-        return false;
+        if (!ackMessage) return false;
+
+        logger.LogInformation(message: "[{DeviceBarcode}] [{MessageType}] ACK Received", context.DeviceBarcode,
+            messageType.GetName());
+        return true;
     }
 }

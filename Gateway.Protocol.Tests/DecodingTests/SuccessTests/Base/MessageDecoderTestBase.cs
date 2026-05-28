@@ -3,7 +3,7 @@ using Gateway.Protocol.MessageDecoding;
 using Gateway.Protocol.MessageDecoding.Decoders.Frame;
 using Gateway.Protocol.MessageDecoding.Interfaces;
 using Gateway.Protocol.MessageEncoding.Encoders.Frame;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -34,7 +34,7 @@ public abstract class MessageDecoderTestBase<TTest, TDecoder, TPayload>
         var parserHelper = serviceProvider.GetRequiredService<IPacketDecoderParserHelper>();
 
         var sequence = new ReadOnlySequence<byte>(testCase.Input);
-        var success = parserHelper.GetPayloadBytesFromPacket(ref sequence, out var body, out var messageType);
+        var success = parserHelper.TryGetPayloadBytesFromPacket(ref sequence, out var body, out var messageType);
         var result = decoder.Decode(body);
 
         Assert.True(result.Ok, result.ErrorMessage);

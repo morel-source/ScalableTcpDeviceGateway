@@ -58,9 +58,7 @@ public class DeviceSimulatorService(
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            // linked to app-lifetime; allows us to kill THIS connection attempt specifically
             using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
 
             try
             {
@@ -69,41 +67,49 @@ public class DeviceSimulatorService(
 
                 try
                 {
-                    // --- PHASE 1: LOGIN (Limited by Semaphore) ---
                     await loginSemaphore.WaitAsync(connectionCts.Token);
                     await tcpClient.ConnectAsync(options.Value.ServerHost, options.Value.ServerPort,
                         connectionCts.Token);
                 }
                 finally
                 {
-                    loginSemaphore.Release(); // release for the next device
+                    loginSemaphore.Release();
                 }
-
 
                 using var context = new DeviceConnectionContext(tcpClient.GetStream(), deviceBarcode);
 
-                // Start background reader
                 var readerTask = RunReaderLoopAsync(context, connectionCts);
 
-                // Perform Handshake
                 using (metricsService.MeasureLoginProcess())
                 {
                     var loginOk = await messageHandler.SendLoginAsync(context, connectionCts.Token);
-                    if (!loginOk) return; // Exit using block, triggers decrement
+                    if (!loginOk)
+                    {
+                        await connectionCts.CancelAsync();
+                        await readerTask;
+                        return;
+                    }
 
                     metricsService.IncrementLoginConnections();
                 }
 
-                await messageHandler.SendHeartbeatLoopAsync(context, connectionCts.Token);
+                // -------------------------------------------------------
+                // Run heartbeat AND telemetry concurrently.
+                // WhenAny: if either loop exits (timeout, drop, cancel),
+                // cancel the other one immediately and close the connection.
+                // -------------------------------------------------------
+                var heartbeatTask = messageHandler.SendHeartbeatLoopAsync(context, connectionCts.Token);
+                var telemetryTask = messageHandler.SendTelemetryLoopAsync(context, connectionCts.Token);
+
+                await Task.WhenAny(heartbeatTask, telemetryTask);
 
                 await connectionCts.CancelAsync();
-                await readerTask;
+                await Task.WhenAll(heartbeatTask, telemetryTask, readerTask);
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
-                logger.LogWarning(message: "[{DeviceBarcode}] connection dropped: {Message}. Retrying in 30s...",
+                logger.LogWarning("[{DeviceBarcode}] connection dropped: {Message}. Retrying in 30s...",
                     deviceBarcode, ex.Message);
-
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);

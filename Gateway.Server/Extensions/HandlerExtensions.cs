@@ -1,6 +1,6 @@
 using Gateway.Protocol.Enums;
-using Gateway.Server.Handlers;
 using Gateway.Server.Handlers.Base;
+using Gateway.Server.Handlers.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,5 +12,7 @@ public static class HandlerExtensions
     {
         builder.Services.AddKeyedSingleton<IMessageHandler, LoginMessageMessageHandler>(MessageType.Login);
         builder.Services.AddKeyedSingleton<IMessageHandler, HeartbeatMessageMessageHandler>(MessageType.Heartbeat);
+        builder.Services.AddKeyedSingleton<IMessageHandler, TelemetryMessageHandler>(MessageType.Telemetry);
+        builder.Services.AddKeyedSingleton<IMessageHandler, AlertMessageHandler>(MessageType.Alert);
     }
 }

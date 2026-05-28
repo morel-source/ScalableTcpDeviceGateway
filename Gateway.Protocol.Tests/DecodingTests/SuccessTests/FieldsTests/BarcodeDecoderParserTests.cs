@@ -1,5 +1,5 @@
 using Gateway.Protocol.MessageDecoding.Decoders.Fields;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Fields;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Gateway.Protocol.Tests.DecodingTests.SuccessTests.Base;
 

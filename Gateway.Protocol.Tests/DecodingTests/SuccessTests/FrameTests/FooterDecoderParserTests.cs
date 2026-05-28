@@ -13,7 +13,7 @@ public class FooterDecoderParserTests :
     [
         new(
             TestName: "Footer Test",
-            Input: [0x35],
+            Input: [0x03],
             ExpectedResult: FrameByte.EndByte)
     ];
 }

@@ -13,7 +13,7 @@ public class HeaderDecoderParserTests :
     [
         new(
             TestName: "Header Test",
-            Input: [0x01],
+            Input: [0x02],
             ExpectedResult: FrameByte.StartByte)
     ];
 }

@@ -59,7 +59,7 @@ public class GatewayServer(
     {
         logger.LogInformation(message: "Gateway Server shutdown initiated...");
 
-        // stopping the listener  first, this immediately stops new devices from connecting and breaks the loop in ExecuteAsync
+        // stopping the listener first, this immediately stops new devices from connecting and breaks the loop in ExecuteAsync
         _listener?.Stop();
 
         try

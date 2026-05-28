@@ -1,7 +1,7 @@
 using Gateway.Protocol.Enums;
 using Gateway.Protocol.MessageEncoding.Encoders.Frame;
 using Gateway.Protocol.MessageEncoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gateway.Protocol.MessageEncoding;

@@ -1,6 +1,6 @@
 using System.Buffers;
 using Gateway.Protocol.MessageDecoding.Interfaces;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Base;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

@@ -1,8 +1,7 @@
 using Gateway.Protocol.MessageEncoding.Encoders.Fields;
-using Gateway.Protocol.Payloads;
+using Gateway.Protocol.Payloads.Fields;
 using Gateway.Protocol.Tests.Common.Interfaces;
 using Gateway.Protocol.Tests.EncodingTests.SuccessTests.Base;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Gateway.Protocol.Tests.EncodingTests.SuccessTests.FieldsTests;
 
@@ -10,11 +9,6 @@ public class TimestampEncoderParserTests :
     FieldEncoderTestBase<TimestampEncoderParserTests, TimestampEncoderParser, TimestampPayload>,
     ITestData<FieldEncoderTestBase<TimestampEncoderParserTests, TimestampEncoderParser, TimestampPayload>.TestCase>
 {
-    protected override void AddDependencies(IServiceCollection services)
-    {
-        services.AddSingleton<TimestampEncoderParser>();
-    }
-
     public static IEnumerable<TestCase> TheoryData =>
     [
         new(

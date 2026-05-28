@@ -21,9 +21,18 @@ public static class ParsersAndEncodersExtensions
         {
             builder.Services.AddKeyedSingleton<IMessageDecoder, LoginMessageDecoderParser>(MessageType.Login);
             builder.Services.AddKeyedSingleton<IMessageDecoder, HeartBeatMessageDecoderParser>(MessageType.Heartbeat);
+            builder.Services.AddKeyedSingleton<IMessageDecoder, TelemetryMessageDecoderParser>(MessageType.Telemetry);
+            builder.Services.AddKeyedSingleton<IMessageDecoder, AlertMessageDecoderParser>(MessageType.Alert);
 
+            builder.Services.AddSingleton<LoginMessageDecoderParser>();
             builder.Services.AddSingleton<BarcodeDecoderParser>();
             builder.Services.AddSingleton<TimestampDecoderParser>();
+
+            builder.Services.AddSingleton<TemperatureDecoderParser>();
+            builder.Services.AddSingleton<BatteryDecoderParser>();
+            builder.Services.AddSingleton<SignalDecoderParser>();
+            builder.Services.AddSingleton<AlertTypeDecoderParser>();
+
             builder.Services.AddSingleton<HeaderDecoderParser>();
             builder.Services.AddSingleton<MessageTypeDecoderParser>();
             builder.Services.AddSingleton<LengthDecoderParser>();
@@ -38,7 +47,7 @@ public static class ParsersAndEncodersExtensions
             builder.Services.AddSingleton<MessageTypeEncoderParser>();
             builder.Services.AddSingleton<LengthEncoderParser>();
             builder.Services.AddSingleton<FooterEncoderParser>();
-            
+
             builder.Services.AddKeyedSingleton<IMessageEncoder, AckMessageEncoderParser>(MessageType.Ack);
             builder.Services.AddSingleton<IPacketEncoderParserHelper, PacketEncoderParserHelper>();
         }
